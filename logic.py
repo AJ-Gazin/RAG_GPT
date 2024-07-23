@@ -6,16 +6,49 @@ from firecrawl import FirecrawlApp
 from tiktoken import encoding_for_model
 from prompts import answer_query_prompt, score_hyperlinks_prompt
 import re
+import faiss
+import numpy as np
 
-# Global variables to cache API keys
+# Global variables to cache API keys and FAISS index
 firecrawl_api_key = None
 openai_client = None
+faiss_index = None
+document_store = {}
 
 def set_api_keys(firecrawl_key, openai_key):
-    global firecrawl_api_key, openai_client
+    global firecrawl_api_key, openai_client, faiss_index
     firecrawl_api_key = firecrawl_key
     openai_client = OpenAI(api_key=openai_key)
+    faiss_index = faiss.IndexFlatL2(1536)  # Assuming embedding size is 1536
     return "API keys have been set."
+
+def generate_embeddings(text):
+    response = openai_client.embeddings.create(
+        input=text,
+        model="text-embedding-ada-002"
+    )
+    return np.array(response.data[0].embedding)
+
+def truncate_text_for_embedding(text, max_tokens=8192, model="text-embedding-ada-002"):
+    enc = encoding_for_model(model)
+    tokens = enc.encode(text)
+    if len(tokens) > max_tokens:
+        tokens = tokens[:max_tokens]
+    return enc.decode(tokens)
+
+def store_embeddings(document_path):
+    """
+    Generates and stores embeddings for the given document.
+    """
+    global faiss_index, document_store
+    
+    with open(document_path, 'r', encoding='utf-8') as f:
+        document_text = f.read()
+    
+    truncated_text = truncate_text_for_embedding(document_text)
+    embedding = generate_embeddings(truncated_text)
+    faiss_index.add(np.array([embedding]))
+    document_store[faiss_index.ntotal - 1] = truncated_text
 
 def parse_webpage(url, firecrawl_api_key):
     folder_name = 'parsed_pages'
@@ -24,7 +57,6 @@ def parse_webpage(url, firecrawl_api_key):
 
     # Check if the webpage has already been parsed
     if os.path.exists(original_file_path):
-        print("Webpage has already been parsed. Using existing data.")
         hyperlinks_with_context = read_existing_hyperlinks(hyperlinks_file_path)
         return original_file_path, hyperlinks_with_context
     
@@ -55,8 +87,6 @@ def parse_webpage(url, firecrawl_api_key):
     soup = BeautifulSoup(page_content, 'html.parser')
     new_hyperlinks_with_context = extract_hyperlinks_with_context(soup)
     
-    print("Extracted hyperlinks with context:", new_hyperlinks_with_context)  # Debug statement
-    
     # Read existing hyperlinks and contexts
     existing_hyperlinks = read_existing_hyperlinks(hyperlinks_file_path)
     
@@ -73,11 +103,6 @@ def parse_webpage(url, firecrawl_api_key):
         for link, contexts in existing_hyperlinks.items():
             for context in contexts:
                 f.write(f"{link}\ncontext: {context}\n")
-    
-    # Debug statement to confirm hyperlinks have been written
-    with open(hyperlinks_file_path, 'r', encoding='utf-8') as f:
-        saved_hyperlinks = f.read().splitlines()
-        print("Saved hyperlinks:", saved_hyperlinks)
     
     return original_file_path, new_hyperlinks_with_context
 
@@ -151,16 +176,21 @@ def truncate_documents(documents, max_tokens, model="gpt-3.5-turbo"):
     
     return truncated_docs
 
-def answer_query(query, documents):
+def answer_query(query, primary_document, relevant_document):
     """
-    Answers the given query using the provided documents.
+    Answers the given query using the provided documents and logs the prompt for debugging.
     """
-    combined_document = "\n\n".join(documents)
-    max_context_length = 4096  # Adjust based on the model's max context length
+    combined_document = primary_document + "\n\n" + relevant_document
+    max_context_length = 16385  # Adjust based on the model's max context length
     truncated_documents = truncate_documents([combined_document], max_context_length)
     truncated_combined_document = "\n\n".join(truncated_documents)
     
     prompt = answer_query_prompt(query, truncated_combined_document)
+    
+    # Log the prompt for debugging
+    with open('prompt_log.txt', 'a', encoding='utf-8') as log_file:
+        log_file.write(f"Prompt sent to OpenAI:\n{prompt}\n{'-'*80}\n")
+    
     response = openai_client.chat.completions.create(
         messages=[
             {"role": "user", "content": prompt}
@@ -210,10 +240,11 @@ def process_inputs(url, query):
     if not original_file_path or not hyperlinks_with_context:
         return "Failed to parse the original webpage."
     
-    documents = setup_rag([original_file_path])
+    # Store embeddings for the primary document
+    store_embeddings(original_file_path)
     
-    # Answer the query using the original documents
-    answer = answer_query(query, documents)
+    # Read the primary document
+    primary_document = open(original_file_path, 'r', encoding='utf-8').read()
     
     # Score the relevancy of each hyperlink
     scores = score_hyperlinks(query, hyperlinks_with_context)
@@ -222,13 +253,17 @@ def process_inputs(url, query):
     most_relevant_url = max(scores, key=scores.get)
     high_relevancy_threshold = 0.9  # Define a high relevancy threshold
     
+    relevant_document = ""
     if scores[most_relevant_url] > high_relevancy_threshold:
-        print(f"Most relevant URL: {most_relevant_url} with score {scores[most_relevant_url]}")
-        # Parse the most relevant hyperlink and add it to RAG
+        # Parse the most relevant hyperlink
         relevant_file_path, _ = parse_webpage(most_relevant_url, firecrawl_api_key)
         
         if relevant_file_path:
-            documents += setup_rag([relevant_file_path])
-            answer = answer_query(query, documents)
+            # Store embeddings for the relevant document
+            store_embeddings(relevant_file_path)
+            relevant_document = open(relevant_file_path, 'r', encoding='utf-8').read()
+    
+    # Answer the query using the primary and relevant documents
+    answer = answer_query(query, primary_document, relevant_document)
     
     return answer

@@ -1,0 +1,205 @@
+Prompt sent to OpenAI:
+
+You are an intelligent assistant tasked with providing detailed and comprehensive answers to user queries based on the provided documents. Below is a user's query followed by relevant documents that you can use to generate your answer.
+
+User Query:
+Tell me about East Ardougne
+
+Relevant Documents:
+Mill Road Mill
+==============
+
+From the RuneScape Wiki, the wiki for all things RuneScape
+
+[Jump to navigation](#mw-head)
+ [Jump to search](#searchInput)
+
+Kandarin windmill
+
+This article is about the mill north of Ardougne. For the mill north of Lumbridge, see [Mill Lane Mill](/w/Mill_Lane_Mill "Mill Lane Mill")
+.
+
+| Mill Road Mill |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
+| --- | --- |
+| [![](https://runescape.wiki/images/thumb/Mill_Road_Mill.png/300px-Mill_Road_Mill.png?3cc3e)](/w/File:Mill_Road_Mill.png) |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
+|     |     |     |     |     |
+| Release |     |     |     |     |     | [17 March](/w/17_March "17 March")<br> [2009](/w/2009 "2009")<br> ([Update](/w/Update:The_Chosen_Commander "Update:The Chosen Commander")<br>) |     |     |     |     |     |     |     |     |     |     |     |     |     |
+| [Members](/w/Members "Members") |     |     |     |     |     | Yes |     |     |     |     |     |     |     |     |     |     |     |     |     |
+| Location |     |     |     |     |     | North of [East Ardougne](/w/East_Ardougne "East Ardougne") |     |     |     |     |     |     |     |     |     |     |     |     |     |
+| Features |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
+| [![](https://runescape.wiki/images/thumb/General_store_map_icon.png/15px-General_store_map_icon.png?3d772)](/w/Shop "Shop")<br> 1 |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
+|     |     |     |     |     |
+| Map |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |
+|     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |     |[\[view\]](/w/Template:Infobox_Location "Template:Infobox Location")
+ • [\[talk\]](/w/Template_talk:Infobox_Location "Template talk:Infobox Location")
+
+[![](https://runescape.wiki/images/thumb/Sigmund%27s_Base1.png/300px-Sigmund%27s_Base1.png?30d28)](/w/File:Sigmund%27s_Base1.png)
+
+The base of Sigmund.
+
+[![](https://runescape.wiki/images/thumb/Sigmund%27s_Base2.png/300px-Sigmund%27s_Base2.png?f7683)](/w/File:Sigmund%27s_Base2.png)
+
+The storage room and prison.
+
+**Mill Road Mill** is a [windmill](/w/Windmill "Windmill")
+ north of [East Ardougne](/w/East_Ardougne "East Ardougne")
+. It is run by [Milton the Miller](/w/Milton_the_Miller "Milton the Miller")
+, a member of the radical [Humans Against Monsters](/w/H.A.M. "H.A.M.")
+ group. [Richard](/w/Richard_(Ardougne) "Richard (Ardougne)")
+ can be found in the mill selling basic farming supplies in his [shop](/w/Richard%27s_Farming_Shop "Richard's Farming Shop")
+. There is a [statue of a king](/w/Statue_of_a_king_(generic) "Statue of a king (generic)")
+ to the west.
+
+Since the opening of the [Dorgesh-Kaan - Keldagrim Train System](/w/Dorgesh-Kaan_-_Keldagrim_Train_System "Dorgesh-Kaan - Keldagrim Train System")
+, [Sigmund](/w/Sigmund "Sigmund")
+ took up residence in a secret basement under the mill, with glyphs on the wall preventing teleportation. When [Grubfoot](/w/Grubfoot "Grubfoot")
+ visited the [Plain of Mud](/w/Plain_of_Mud "Plain of Mud")
+, he was abducted by the H.A.M. agents and taken to the base. At roughly the same time, [H.A.M. agent Walton](/w/H.A.M._agent_Walton "H.A.M. agent Walton")
+ was sent to [Dorgesh-Kaan](/w/Dorgesh-Kaan "Dorgesh-Kaan")
+, disguised as a [merchant](/w/Merchant_Walton "Merchant Walton")
+ and started poisoning the children of the city, until he was arrested and even killed by [Zanik](/w/Zanik "Zanik")
+, who had been influenced by [Bandos](/w/Bandos "Bandos")
+ himself.
+
+Later, an adventurer infiltrates the base to free Grubfoot, but, just as they leave, a fully possessed Zanik, the [Goblin High Priest](/w/High_Priest_(Bighead) "High Priest (Bighead)")
+ and a small group of goblins break into the base and the [Assault on Sigmund's Base](/w/Assault_on_Sigmund%27s_Base "Assault on Sigmund's Base")
+ begins, wherein all goblins and H.A.M. agents are killed, including Sigmund, and the High Priest becomes the [Bandos Avatar](/w/Bandos_Avatar "Bandos Avatar")
+ after Zanik defied him. The basement is destroyed in an ensuing earthquake and can no longer be accessed afterwards.
+
+Update history\[[edit](/w/Mill_Road_Mill?section=1&veaction=edit "Edit section: Update history")\
+ | [edit source](/w/Mill_Road_Mill?action=edit&section=1 "Edit section's source code: Update history")\
+\]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+This information has been compiled as part of the [update history project](/w/RuneScape:Historical_information_policy "RuneScape:Historical information policy")
+. Some updates may not be included – see [here](/w/RuneScape:Maintenance/Update_history "RuneScape:Maintenance/Update history")
+ for how to help out!
+
+*   [hotfix](/w/Patch_Notes "Patch Notes")
+     **10 September 2018 ([Update](/w/Update:Patch_Notes_(10_September_2018) "Update:Patch Notes (10 September 2018)")
+    ):**
+    *   [Milton the Miller](/w/Milton_the_Miller "Milton the Miller")
+         has now returned to his mill.
+
+*   [update](/w/Game_updates "Game updates")
+     **17 March 2009 ([Update](/w/Update:The_Chosen_Commander "Update:The Chosen Commander")
+    ):**
+    *   Added to game.
+
+Trivia\[[edit](/w/Mill_Road_Mill?section=2&veaction=edit "Edit section: Trivia")\
+ | [edit source](/w/Mill_Road_Mill?action=edit&section=2 "Edit section's source code: Trivia")\
+\]
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+*   The name of the mill might be a reference to [Mill Road](https://en.wikipedia.org/wiki/Mill_Road,_Cambridge "wikipedia:Mill Road, Cambridge")
+    , a street in Cambridge, England, where Jagex is located.
+
+[v](/w/Template:The_Chosen_Commander "Template:The Chosen Commander")
+ • [d](https://runescape.wiki/w/Template_talk:The_Chosen_Commander)
+ • [e](https://runescape.wiki/w/Template:The_Chosen_Commander?action=edit)
+
+RS3 [The Chosen Commander](/w/The_Chosen_Commander "The Chosen Commander")
+
+_Part 5 of the [Cave Goblin quest series](/w/Cave_Goblin_quest_series "Cave Goblin quest series")
+_NPCs
+
+*   [![Milton the Miller chathead.png: Chat head image of Milton the Miller](https://runescape.wiki/images/thumb/Milton_the_Miller_chathead.png/27px-Milton_the_Miller_chathead.png?7fa50)](/w/Milton_the_Miller "Milton the Miller")
+    [Milton the Miller](/w/Milton_the_Miller "Milton the Miller")
+    
+*   [![Grubfoot chathead.png: Chat head image of Grubfoot](https://runescape.wiki/images/thumb/Grubfoot_chathead.png/35px-Grubfoot_chathead.png?ea8c2)](/w/Grubfoot "Grubfoot")
+    [Grubfoot](/w/Grubfoot "Grubfoot")
+    
+*   [![High Priest (Bighead) chathead.png: Chat head image of High Priest (Bighead)](https://runescape.wiki/w/Bighead)](/w/High_Priest_(Bighead) "High Priest (Bighead)")
+    [High Priest (Bighead)](/w/High_Priest_(Bighead) "High Priest (Bighead)")
+    
+*   [![Juna chathead.png: Chat head image of Juna](https://runescape.wiki/images/thumb/Juna_chathead.png/35px-Juna_chathead.png?92480)](/w/Juna "Juna")
+    [Juna](/w/Juna "Juna")
+    
+*   [![Ambassador Alvijar chathead.png: Chat head image of Ambassador Alvijar](https://runescape.wiki/images/thumb/Ambassador_Alvijar_chathead.png/32px-Ambassador_Alvijar_chathead.png?eb6fd)](/w/Ambassador_Alvijar "Ambassador Alvijar")
+    [Ambassador Alvijar](/w/Ambassador_Alvijar "Ambassador Alvijar")
+    
+
+Dorgeshuun
+
+*   [![Captain Undak chathead.png: Chat head image of Captain Undak](https://runescape.wiki/images/thumb/Captain_Undak_chathead.png/24px-Captain_Undak_chathead.png?f2d27)](/w/Captain_Undak "Captain Undak")
+    [Captain Undak](/w/Captain_Undak "Captain Undak")
+    
+*   [![Mernik chathead.png: Chat head image of Mernik](https://runescape.wiki/images/thumb/Mernik_chathead.png/27px-Mernik_chathead.png?ab34b)](/w/Mernik "Mernik")
+    [Mernik](/w/Mernik "Mernik")
+    
+*   [![Torzek chathead.png: Chat head image of Torzek](https://runescape.wiki/images/thumb/Torzek_chathead.png/33px-Torzek_chathead.png?6ef84)](/w/Torzek "Torzek")
+    [Torzek](/w/Torzek "Torzek")
+    
+*   [![Gundik chathead.png: Chat head image of Gundik](https://runescape.wiki/images/thumb/Gundik_chathead.png/35px-Gundik_chathead.png?5b1b8)](/w/Gundik "Gundik")
+    [Gundik](/w/Gundik "Gundik")
+    
+*   [![Tindar chathead.png: Chat head image of Tindar](https://runescape.wiki/images/thumb/Tindar_chathead.png/26px-Tindar_chathead.png?d6498)](/w/Tindar "Tindar")
+    [Tindar](/w/Tindar "Tindar")
+    
+*   [![Durgok chathead.png: Chat head image of Durgok](https://runescape.wiki/images/thumb/Durgok_chathead.png/35px-Durgok_chathead.png?c4825)](/w/Durgok "Durgok")
+    [Durgok](/w/Durgok "Durgok")
+    
+*   [![Zenkog chathead.png: Chat head image of Zenkog](https://runescape.wiki/images/thumb/Zenkog_chathead.png/33px-Zenkog_chathead.png?61a45)](/w/Zenkog "Zenkog")
+    [Zenkog](/w/Zenkog "Zenkog")
+    
+*   [![Markog chathead.png: Chat head image of Markog](https://runescape.wiki/images/thumb/Markog_chathead.png/32px-Markog_chathead.png?0e3a0)](/w/Markog "Markog")
+    [Markog](/w/Markog "Markog")
+    
+*   [![Turgok chathead.png: Chat head image of Turgok](https://runescape.wiki/images/thumb/Turgok_chathead.png/33px-Turgok_chathead.png?70c8c)](/w/Turgok "Turgok")
+    [Turgok](/w/Turgok "Turgok")
+    
+*   [![Zanik chathead.png: Chat head image of Zanik](https://runescape.wiki/images/thumb/Zanik_chathead.png/35px-Zanik_chathead.png?a8d9b)](/w/Zanik "Zanik")
+    [Zanik](/w/Zanik "Zanik")
+    
+*   [![Goblin scribe chathead.png: Chat head image of Goblin scribe](https://runescape.wiki/images/thumb/Goblin_scribe_chathead.png/35px-Goblin_scribe_chathead.png?366b7)](/w/Goblin_scribe "Goblin scribe")
+    [Goblin scribe](/w/Goblin_scribe "Goblin scribe")
+    
+*   [![Tegdak chathead.png: Chat head image of Tegdak](https://runescape.wiki/images/thumb/Tegdak_chathead.png/35px-Tegdak_chathead.png?d0a01)](/w/Tegdak "Tegdak")
+    [Tegdak](/w/Tegdak "Tegdak")
+    
+*   [![Mistag chathead.png: Chat head image of Mistag](https://runescape.wiki/images/thumb/Mistag_chathead.png/27px-Mistag_chathead.png?5865b)](/w/Mistag "Mistag")
+    [Mistag](/w/Mistag "Mistag")
+    
+*   [![Oldak chathead.png: Chat head image of Oldak](https://runescape.wiki/images/thumb/Oldak_chathead.png/34px-Oldak_chathead.png?a80fd)](/w/Oldak "Oldak")
+    [Oldak](/w/Oldak "Oldak")
+    
+*   [![Turgall chathead.png: Chat head image of Turgall](https://runescape.wiki/images/thumb/Turgall_chathead.png/33px-Turgall_chathead.png?787c6)](/w/Turgall "Turgall")
+    [Turgall](/w/Turgall "Turgall")
+    
+*   [![Andil chathead.png: Chat head image of Andil](https://runescape.wiki/images/thumb/Andil_chathead.png/31px-Andil_chathead.png?19343)](/w/Andil "Andil")
+    [Andil](/w/Andil "Andil")
+    
+*   [![Horgon chathead.png: Chat head image of Horgon](https://runescape.wiki/images/thumb/Horgon_chathead.png/30px-Horgon_chathead.png?e38d6)](/w/Horgon "Horgon")
+    [Horgon](/w/Horgon "Horgon")
+    
+*   [![Inglin chathead.png: Chat head image of Inglin](https://runescape.wiki/images/thumb/Inglin_chathead.png/31px-Inglin_chathead.png?16aa5)](/w/Inglin "Inglin")
+    [Inglin](/w/Inglin "Inglin")
+    
+*   [![Caldi chathead.png: Chat head image of Caldi](https://runescape.wiki/images/thumb/Caldi_chathead.png/29px-Caldi_chathead.png?6fd44)](/w/Caldi "Caldi")
+    [Caldi](/w/Caldi "Caldi")
+    
+*   [![Bozin chathead.png: Chat head image of Bozin](https://runescape.wiki/images/thumb/Bozin_chathead.png/30px-Bozin_chathead.png?79b4a)](/w/Bozin "Bozin")
+    [Bozin](/w/Bozin "Bozin")
+    
+*   [![Jobo chathead.png: Chat head image of Jobo](https://runescape.wiki/images/thumb/Jobo_chathead.png/31px-Jobo_chathead.png?17044)](/w/Jobo "Jobo")
+    [Jobo](/w/Jobo "Jobo")
+    
+*   [![Kenti chathead.png: Chat head image of Kenti](https://runescape.wiki/images/thumb/Kenti_chathead.png/28px-Kenti_chathead.png?c040f)](/w/Kenti "Kenti")
+    [Kenti](/w/Kenti "Kenti")
+    
+*   [![Lorzan chathead.png: Chat head image of Lorzan](https://runescape.wiki/images/thumb/Lorzan_chathead.png/29px-Lorzan_chathead.png?f08c9)](/w/Lorzan "Lorzan")
+    [Lorzan](/w/Lorzan "Lorzan")
+    
+*   [![Fandon chathead.png: Chat head image of Fandon](https://runescape.wiki/images/thumb/Fandon_chathead.png/30px-Fandon_chathead.png?b0de9)](/w/Fandon "Fandon")
+    [Fandon](/w/Fandon "
+
+Instructions:
+- Provide a detailed and thorough answer to the user's query.
+- Use information from the provided documents to support your answer.
+- Include relevant examples or explanations to enhance the clarity of your response.
+- Ensure your answer is well-structured and easy to understand.
+- If there are multiple points of view or interpretations, present them clearly.
+
+Answer:
+
+--------------------------------------------------------------------------------
