@@ -2,3 +2,4 @@ parsed_pages/
 venv/
 temp/
 .env
+prompt_log.txt

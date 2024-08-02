@@ -1,10 +1,12 @@
+# app.py
+
 import gradio as gr
 from firecrawl import FirecrawlApp
-from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 import os
 from dotenv import load_dotenv
+from prompts import summarize_prompt, select_urls_prompt, answer_prompt  # Import prompts
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -16,7 +18,8 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 app = FirecrawlApp(api_key=firecrawl_api_key)
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, api_key=openai_api_key)
 
-# directory for downloading markdown files
+# Directory to store crawled pages
+#TODO: replace with proper database
 os.makedirs("parsed_pages", exist_ok=True)
 
 # Dictionary to store summaries
@@ -28,7 +31,7 @@ def crawl_and_store(url):
         crawl_results = app.crawl_url(url, {
             'crawlerOptions': {
                 'maxDepth': 2,
-                'limit': 20,
+                'limit': 25,
                 'onlyMainContent': True
             },
             'wait_until_done': True
@@ -63,11 +66,8 @@ def crawl_and_store(url):
 
 def summarize_content(content):
     try:
-        prompt = PromptTemplate.from_template(
-            "Summarize the following content in 1-2 sentences:\n{content}"
-        )
-        # Use the pipe operator to chain prompts and LLMs
-        chain = prompt | llm | StrOutputParser()
+        # Use the imported summarize_prompt
+        chain = summarize_prompt | llm | StrOutputParser()
         summary = chain.invoke({"content": content}).strip()
         return summary
     except Exception as e:
@@ -78,11 +78,8 @@ def select_relevant_urls(query):
         # Prepare the summaries for the selection prompt
         summaries = "\n".join([f"{url}: {summary}" for url, summary in summary_store.items()])
         
-        # Prompt to select relevant URLs
-        prompt = PromptTemplate.from_template(
-            "Given the query: {query}\nAnd the following summaries:\n{summaries}\nSelect the most relevant URLs for answering the query. Return only the URLs, separated by commas, with a maximum of 2."
-        )
-        chain = prompt | llm | StrOutputParser()
+        # Use the imported select_urls_prompt
+        chain = select_urls_prompt | llm | StrOutputParser()
         selected_urls = chain.invoke({"query": query, "summaries": summaries}).strip()
         return selected_urls.split(",") if selected_urls else []
 
@@ -93,7 +90,7 @@ def answer_query(query):
     try:
         selected_urls = select_relevant_urls(query)
         if not selected_urls:
-            disclaimer = "No relevant URLs were found. "
+            disclaimer = "No relevant URLs were found."
         else:
             disclaimer = ""
 
@@ -108,17 +105,18 @@ def answer_query(query):
 
         # Compile the context from selected markdown content
         context = "\n\n".join(context_parts)
-        prompt = PromptTemplate.from_template(
-            "Given the query: {query}\nAnd the following context:\n{context}\nProvide a comprehensive answer to the query."
-        )
-        # Use the pipe operator for chaining
-        chain = prompt | llm | StrOutputParser()
+        
+        # Use the imported answer_prompt
+        chain = answer_prompt | llm | StrOutputParser()
         answer = chain.invoke({"query": query, "context": context})
 
-        return disclaimer + answer
+        # Format selected URLs as a string
+        urls_output = ", ".join(selected_urls) if selected_urls else "No URLs selected."
+
+        return disclaimer + answer, urls_output
 
     except Exception as e:
-        return f"An error occurred while answering the query: {str(e)}"
+        return f"An error occurred while answering the query: {str(e)}", "Error retrieving URLs"
 
 # Gradio interfaces for crawling and querying
 crawl_interface = gr.Interface(
@@ -132,9 +130,12 @@ crawl_interface = gr.Interface(
 query_interface = gr.Interface(
     fn=answer_query,
     inputs=gr.Textbox(label="Your Query"),
-    outputs=gr.Textbox(label="Answer"),
+    outputs=[
+        gr.Textbox(label="Answer"),
+        gr.Textbox(label="Relevant URLs"),
+    ],
     title="Query Assistant",
-    description="Enter a query to get an answer based on the crawled content stored in files.",
+    description="Enter a query to get an answer based on the crawled content stored in files. The relevant URLs used as context will also be shown.",
 )
 
 # Combine interfaces into a tabbed interface
