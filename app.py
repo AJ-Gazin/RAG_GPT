@@ -16,7 +16,7 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 app = FirecrawlApp(api_key=firecrawl_api_key)
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, api_key=openai_api_key)
 
-# Ensure the 'parsed_pages' directory exists
+# directory for downloading markdown files
 os.makedirs("parsed_pages", exist_ok=True)
 
 # Dictionary to store summaries
