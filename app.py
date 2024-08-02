@@ -24,10 +24,11 @@ summary_store = {}
 
 def crawl_and_store(url):
     try:
-        # Start a crawl with depth 1
+        # Start a crawl
         crawl_results = app.crawl_url(url, {
             'crawlerOptions': {
-                'maxDepth': 1,
+                'maxDepth': 2,
+                'limit': 20,
                 'onlyMainContent': True
             },
             'wait_until_done': True
