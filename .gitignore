@@ -3,4 +3,5 @@ venv/
 temp/
 .env
 prompt_log.txt
+summaries.json
 app_kg.py

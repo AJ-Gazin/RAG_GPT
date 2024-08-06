@@ -7,7 +7,6 @@ from prompts import summarize_prompt, select_urls_prompt, answer_prompt
 import asyncio
 import aiohttp
 from bs4 import BeautifulSoup
-from lxml import html
 from urllib.parse import urljoin, urlparse
 import html2text
 import re
@@ -73,13 +72,8 @@ def sanitize_filename(url):
     
     return url + '.md'
 
-def clean_markdown(markdown):
-    # Remove URLs but keep the text
-    return re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', markdown)
-
-def html_to_clean_markdown(html_content):
-    markdown = h.handle(html_content)
-    return clean_markdown(markdown)
+def html_to_markdown(html_content):
+    return h.handle(html_content)
 
 async def save_summaries_to_disk():
     async with aiofiles.open("summaries.json", "w") as f:
@@ -90,12 +84,7 @@ async def load_summaries_from_disk():
     try:
         async with aiofiles.open("summaries.json", "r") as f:
             content = await f.read()
-            if not content.strip():  # Ensure content is not empty
-                logger.warning("Summaries file is empty.")
-                summary_store = {}
-            else:
-                summary_store = json.loads(content)
-            logger.info("Summaries loaded from disk.")
+            summary_store = json.loads(content)
     except FileNotFoundError:
         summary_store = {}
         logger.warning("No summaries file found, starting with empty summary store.")
@@ -170,6 +159,58 @@ async def process_url(session, url, depth, max_depth, max_size_bytes, semaphore,
         crawl_progress(0, desc=f"Error processing {url}: {str(e)}")
         return None
 
+async def process_url(session, url, depth, max_depth, max_size_bytes, semaphore, crawl_progress):
+    if depth > max_depth:
+        return None
+
+    sanitized_filename = sanitize_filename(url)
+    file_path = os.path.join("parsed_pages", sanitized_filename)
+
+    try:
+        crawl_progress(0, desc=f"Crawling: {url}")
+        
+        async with semaphore:
+            # Check if the URL is already processed
+            if await aiofiles.os.path.exists(file_path):
+                async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
+                    markdown = await file.read()
+                source = "disk"
+                content_size = len(markdown.encode('utf-8'))
+            else:
+                # Fetch and process new content
+                async with session.get(url, headers={'User-Agent': 'Mozilla/5.0'}) as response:
+                    if response.status == 200:
+                        content = await response.text()
+                        soup = BeautifulSoup(content, 'html.parser')
+                        for script in soup(["script", "style"]):
+                            script.decompose()
+                        markdown = html_to_markdown(str(soup))
+                        content_size = len(markdown.encode('utf-8'))
+                        source = "network"
+
+                        # Store the new content
+                        async with aiofiles.open(file_path, "w", encoding="utf-8") as file:
+                            await file.write(markdown)
+
+        # Look for new links
+        soup = BeautifulSoup(markdown, 'html.parser')
+        new_urls = []
+        for link in soup.find_all('a', href=True):
+            absolute_url = urljoin(url, link['href'])
+            if urlparse(absolute_url).netloc == urlparse(url).netloc:
+                new_urls.append((absolute_url, depth + 1))
+
+        return {
+            'markdown': markdown,
+            'metadata': {'sourceURL': url, 'size_bytes': content_size, 'source': source},
+            'new_urls': new_urls
+        }
+
+    except Exception as e:
+        logger.error(f"Error processing {url}: {str(e)}")
+        crawl_progress(0, desc=f"Error processing {url}: {str(e)}")
+        return None
+
 async def crawl_url(url, max_depth=2, max_size_mb=10, max_concurrency=5, crawl_progress=gr.Progress()):
     results = []
     total_size_bytes = 0
@@ -177,48 +218,41 @@ async def crawl_url(url, max_depth=2, max_size_mb=10, max_concurrency=5, crawl_p
     semaphore = asyncio.Semaphore(max_concurrency)
 
     crawl_progress(0, desc="Starting crawl...")
-    logger.info(f"Starting crawl of {url} with max depth {max_depth} and max size {max_size_mb}MB")
 
     async with aiohttp.ClientSession() as session:
-        visited = set()
-        to_visit = [(url, 0)]
-        scheduled_to_visit = set()  # Track URLs that are scheduled to visit
+        tasks = set([asyncio.create_task(process_url(session, url, 0, max_depth, max_size_bytes, semaphore, crawl_progress))])
+        visited = set([url])
 
-        while to_visit and total_size_bytes < max_size_bytes:
-            current_tasks = []
-            for _ in range(min(max_concurrency, len(to_visit))):
-                if not to_visit:
-                    break
-                current_url, current_depth = to_visit.pop(0)
-                if current_url not in visited:
-                    visited.add(current_url)
-                    task = asyncio.create_task(process_url(session, current_url, current_depth, max_depth, max_size_bytes, semaphore, crawl_progress))
-                    current_tasks.append(task)
-                    logger.info(f"Created task for URL: {current_url} at depth {current_depth}")
-
-            if not current_tasks:
-                logger.info("No more tasks to process, breaking the loop")
-                break
-
-            for result in await asyncio.gather(*current_tasks):
+        while tasks and total_size_bytes < max_size_bytes:
+            done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                result = await task
                 if result:
                     results.append(result)
                     total_size_bytes += result['metadata']['size_bytes']
-                    logger.info(f"Processed {result['metadata']['sourceURL']}. Total size now: {total_size_bytes / (1024 * 1024):.2f} MB")
                     
                     for new_url, new_depth in result['new_urls']:
-                        if new_url not in visited and new_url not in scheduled_to_visit:
-                            to_visit.append((new_url, new_depth))
-                            scheduled_to_visit.add(new_url)
-                            logger.info(f"Added new URL to visit: {new_url} at depth {new_depth}")
+                        if new_url not in visited and new_depth <= max_depth:
+                            visited.add(new_url)
+                            if total_size_bytes < max_size_bytes:
+                                tasks.add(asyncio.create_task(process_url(session, new_url, new_depth, max_depth, max_size_bytes, semaphore, crawl_progress)))
 
             crawl_progress(0, desc=f"Processed {len(results)} pages. Total size: {total_size_bytes / (1024 * 1024):.2f} MB")
 
-    logger.info(f"Crawl complete. Processed {len(results)} pages. Total size: {total_size_bytes / (1024 * 1024):.2f} MB")
     crawl_progress(0, desc=f"Crawl complete. Total size: {total_size_bytes / (1024 * 1024):.2f} MB")
     return results
 
-async def crawl_and_store(url, max_size_mb, crawl_progress=gr.Progress()):
+async def summarize_content_batch(contents, batch_size=5):
+    summaries = []
+    for i in range(0, len(contents), batch_size):
+        batch = contents[i:i+batch_size]
+        chain = summarize_prompt | llm | StrOutputParser()
+        batch_summaries = await asyncio.gather(*[chain.ainvoke({"content": content}) for content in batch])
+        summaries.extend(batch_summaries)
+    return summaries
+
+async def crawl_and_store(url, max_size_mb=10, crawl_progress=gr.Progress()):
+    global in_memory_storage, in_memory_storage_size
     try:
         await load_summaries_from_disk()
         crawl_results = await crawl_url(url, max_size_mb=max_size_mb, crawl_progress=crawl_progress)
@@ -237,8 +271,8 @@ async def crawl_and_store(url, max_size_mb, crawl_progress=gr.Progress()):
             
             sanitized_filename = sanitize_filename(source_url)
             
-            if source_url not in summary_store:  # Use the original URL to check existence
-                to_summarize.append((source_url, markdown))
+            if sanitized_filename not in summary_store:
+                to_summarize.append((sanitized_filename, markdown))
             
             markdown_contents.append(f"Processed: {source_url} (from {source}). Size: {content_size / 1024:.2f} KB")
             total_stored_size += content_size
@@ -247,9 +281,15 @@ async def crawl_and_store(url, max_size_mb, crawl_progress=gr.Progress()):
         if to_summarize:
             crawl_progress(0, desc="Summarizing content...")
             summaries = await summarize_content_batch([content for _, content in to_summarize])
-            for (url, _), summary in zip(to_summarize, summaries):
-                summary_store[url] = summary.strip()  # Use original URL as key
-            await save_summaries_to_disk()
+            for (filename, _), summary in zip(to_summarize, summaries):
+                summary_store[filename] = summary.strip()
+
+        # Save summaries to disk
+        await save_summaries_to_disk()
+
+        # Clear in-memory storage after processing
+        in_memory_storage.clear()
+        in_memory_storage_size = 0
 
         output = f"Total processed size: {total_stored_size / (1024 * 1024):.2f} MB\n" + "\n".join(markdown_contents)
         return output
@@ -258,52 +298,15 @@ async def crawl_and_store(url, max_size_mb, crawl_progress=gr.Progress()):
         logger.error(f"An error occurred during crawling: {str(e)}")
         return f"An error occurred during crawling: {str(e)}"
 
-async def summarize_content_batch(contents, batch_size=5):
-    summaries = []
-    batch = []
-    batch_token_count = 0
-
-    for content in contents:
-        content_tokens = len(content.split())  # Estimate token count by word count
-        if batch_token_count + content_tokens > MAX_TOKENS or len(batch) >= batch_size:
-            # Process current batch
-            chain = summarize_prompt | llm | StrOutputParser()
-            batch_summaries = await asyncio.gather(*[chain.ainvoke({"content": part}) for part in batch])
-            summaries.extend(batch_summaries)
-
-            # Reset batch
-            batch = []
-            batch_token_count = 0
-
-        batch.append(content)
-        batch_token_count += content_tokens
-
-    # Process any remaining content
-    if batch:
-        chain = summarize_prompt | llm | StrOutputParser()
-        batch_summaries = await asyncio.gather(*[chain.ainvoke({"content": part}) for part in batch])
-        summaries.extend(batch_summaries)
-
-    return summaries
-
 async def select_relevant_urls(query):
     try:
         summaries = "\n".join([f"{url}: {summary}" for url, summary in summary_store.items()])
         chain = select_urls_prompt | llm | StrOutputParser()
-        selected_urls_raw = await chain.ainvoke({"query": query, "summaries": summaries})
-        
-        selected_urls = [url.strip() for url in selected_urls_raw.split(",") if url.strip()]
-        
-        # Validate that all returned URLs are in our summary_store
-        invalid_urls = [url for url in selected_urls if url not in summary_store]
-        if invalid_urls:
-            raise ValueError(f"LLM returned invalid URLs: {', '.join(invalid_urls)}")
-        
-        logger.info(f"Selected URLs for query '{query}': {selected_urls}")
-        return selected_urls
+        selected_urls = await chain.ainvoke({"query": query, "summaries": summaries})
+        return selected_urls.strip().split(",") if selected_urls.strip() else []
     except Exception as e:
         logger.error(f"An error occurred while selecting relevant URLs: {str(e)}")
-        raise
+        return []
 
 async def answer_query(query):
     try:
@@ -318,9 +321,7 @@ async def answer_query(query):
             file_path = os.path.join("parsed_pages", sanitized_filename)
             if await aiofiles.os.path.exists(file_path):
                 async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
-                    content = await file.read()
-                    context_parts.append(content)
-                    used_urls.append(url)
+                    context_parts.append(await file.read())
 
         context_combined = "\n\n".join(context_parts)
         total_tokens = len(context_combined.split()) + len(query.split())
@@ -328,7 +329,7 @@ async def answer_query(query):
             return "The query and content exceed the token limit. Try a shorter query or crawl less content.", "Error with token limit"
 
         chain = answer_prompt | llm | StrOutputParser()
-        answer = await chain.ainvoke({"query": query, "context": context_combined})
+        answer = await chain.ainvoke({"query": query, "context": context})
 
         # Convert markdown to HTML
         answer_html = markdown2.markdown(answer)
