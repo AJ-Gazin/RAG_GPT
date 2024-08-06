@@ -1,5 +1,3 @@
-# app.py
-
 import gradio as gr
 from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
@@ -16,13 +14,19 @@ import re
 import hashlib
 import markdown2
 import json
+import logging
+import aiofiles
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Load environment variables from a .env file
 load_dotenv()
 
 # Initialize OpenAI
 openai_api_key = os.getenv("OPENAI_API_KEY")
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, api_key=openai_api_key)
+llm = ChatOpenAI(model="gpt-4-0125-preview", temperature=0.7, api_key=openai_api_key)
 
 # Directory to store crawled pages
 os.makedirs("parsed_pages", exist_ok=True)
@@ -37,10 +41,20 @@ h.ignore_images = False
 h.ignore_emphasis = False
 h.body_width = 0  # Don't wrap text
 
-# Global in-memory storage
-in_memory_storage = {}
-in_memory_storage_size = 0
-MAX_MEMORY_SIZE = 150 * 1024 * 1024  # 150 MB in bytes
+MAX_TOKENS = 120000  # Set a safe margin below the model's maximum
+
+# Common image and video file extensions
+IMAGE_VIDEO_EXTENSIONS = (
+    '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp',  # Image formats
+    '.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.webm',   # Video formats
+    '.mp3', '.wav', '.aac', '.flac', '.ogg', '.m4a',           # Audio formats
+)
+
+def is_image_or_video_url(url):
+    """
+    Check if a URL points to an image or video file by checking its extension.
+    """
+    return url.lower().endswith(IMAGE_VIDEO_EXTENSIONS)
 
 def sanitize_filename(url):
     # Remove the protocol (http:// or https://)
@@ -59,107 +73,163 @@ def sanitize_filename(url):
     
     return url + '.md'
 
-def html_to_markdown(html_content):
-    return h.handle(html_content)
+def clean_markdown(markdown):
+    # Remove URLs but keep the text
+    return re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', markdown)
 
-def save_summaries_to_disk():
-    with open("summaries.json", "w") as f:
-        json.dump(summary_store, f)
+def html_to_clean_markdown(html_content):
+    markdown = h.handle(html_content)
+    return clean_markdown(markdown)
 
-def load_summaries_from_disk():
+async def save_summaries_to_disk():
+    async with aiofiles.open("summaries.json", "w") as f:
+        await f.write(json.dumps(summary_store))
+
+async def load_summaries_from_disk():
     global summary_store
     try:
-        with open("summaries.json", "r") as f:
-            summary_store = json.load(f)
+        async with aiofiles.open("summaries.json", "r") as f:
+            content = await f.read()
+            if not content.strip():  # Ensure content is not empty
+                logger.warning("Summaries file is empty.")
+                summary_store = {}
+            else:
+                summary_store = json.loads(content)
+            logger.info("Summaries loaded from disk.")
     except FileNotFoundError:
         summary_store = {}
+        logger.warning("No summaries file found, starting with empty summary store.")
+
+async def process_url(session, url, depth, max_depth, max_size_bytes, semaphore, crawl_progress):
+    sanitized_filename = sanitize_filename(url)
+    file_path = os.path.join("parsed_pages", sanitized_filename)
+
+    try:
+        crawl_progress(0, desc=f"Processing: {url}")
+        logger.info(f"Processing URL: {url} at depth {depth}")
+        
+        async with semaphore:
+            # Check if the URL is already processed
+            if await aiofiles.os.path.exists(file_path):
+                logger.info(f"Loading content from disk for URL: {url}")
+                async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
+                    markdown = await file.read()
+                source = "disk"
+            else:
+                # Fetch and process new content
+                logger.info(f"Fetching content from network for URL: {url}")
+                async with session.get(url, headers={'User-Agent': 'HuggingFace-Space/1.0'}) as response:
+                    if response.status == 200 and 'text/html' in response.headers['Content-Type']:
+                        content = await response.text()
+                        if not content.strip():  # Ensure content is not empty
+                            logger.warning(f"Empty content at URL: {url}")
+                            return None
+                        soup = BeautifulSoup(content, 'lxml')
+                        for script in soup(["script", "style"]):
+                            script.decompose()
+                        markdown = html_to_clean_markdown(str(soup))
+                        source = "network"
+
+                        # Store the new content
+                        async with aiofiles.open(file_path, "w", encoding="utf-8") as file:
+                            await file.write(markdown)
+                        logger.info(f"Saved content to disk for URL: {url}")
+
+                        # Summarize and cache
+                        chain = summarize_prompt | llm | StrOutputParser()
+                        summary = await chain.ainvoke({"content": markdown})
+                        summary_store[url] = summary.strip()  # Use original URL as key
+                        await save_summaries_to_disk()
+
+                    else:
+                        logger.warning(f"Failed to fetch URL: {url}. Status code: {response.status}")
+                        return None
+
+        content_size = len(markdown.encode('utf-8'))
+
+        # Look for new links using lxml for better accuracy
+        tree = html.fromstring(content)
+        links = tree.xpath('//a/@href')
+        new_urls = set()  # Use a set to avoid duplicates
+        for link in links:
+            absolute_url = urljoin(url, link)
+            if urlparse(absolute_url).netloc == urlparse(url).netloc and not is_image_or_video_url(absolute_url):
+                new_urls.add((absolute_url, depth + 1))
+                logger.debug(f"Link found: {absolute_url} at depth {depth + 1}")
+
+        logger.info(f"Found {len(new_urls)} new URLs to crawl from {url}")
+
+        return {
+            'markdown': markdown,
+            'metadata': {'sourceURL': url, 'size_bytes': content_size, 'source': source},
+            'new_urls': list(new_urls)
+        }
+
+    except Exception as e:
+        logger.error(f"Error processing {url}: {str(e)}")
+        crawl_progress(0, desc=f"Error processing {url}: {str(e)}")
+        return None
 
 async def crawl_url(url, max_depth=2, max_size_mb=10, max_concurrency=5, crawl_progress=gr.Progress()):
-    global in_memory_storage, in_memory_storage_size
-    visited = set()
-    to_visit = [(url, 0)]
     results = []
     total_size_bytes = 0
     max_size_bytes = max_size_mb * 1024 * 1024  # Convert MB to bytes
     semaphore = asyncio.Semaphore(max_concurrency)
 
     crawl_progress(0, desc="Starting crawl...")
-    total_urls = 1  # Start with 1 for the initial URL
+    logger.info(f"Starting crawl of {url} with max depth {max_depth} and max size {max_size_mb}MB")
 
     async with aiohttp.ClientSession() as session:
+        visited = set()
+        to_visit = [(url, 0)]
+        scheduled_to_visit = set()  # Track URLs that are scheduled to visit
+
         while to_visit and total_size_bytes < max_size_bytes:
-            current_url, depth = to_visit.pop(0)
-            if current_url in visited or depth > max_depth:
-                continue
-
-            visited.add(current_url)
-            sanitized_filename = sanitize_filename(current_url)
-            file_path = os.path.join("parsed_pages", sanitized_filename)
-
-            try:
-                crawl_progress(len(visited) / total_urls, desc=f"Processing: {current_url}")
-                
-                # Check if the URL is already processed
-                if os.path.exists(file_path):
-                    with open(file_path, "r", encoding="utf-8") as file:
-                        markdown = file.read()
-                    source = "disk"
-                    content_size = len(markdown.encode('utf-8'))
-                else:
-                    # Fetch and process new content
-                    async with semaphore:
-                        async with session.get(current_url, headers={'User-Agent': 'Mozilla/5.0'}) as response:
-                            if response.status == 200:
-                                content = await response.text()
-                                soup = BeautifulSoup(content, 'lxml')
-                                for script in soup(["script", "style"]):
-                                    script.decompose()
-                                markdown = html_to_markdown(str(soup))
-                                content_size = len(markdown.encode('utf-8'))
-                                source = "network"
-
-                                # Store the new content
-                                with open(file_path, "w", encoding="utf-8") as file:
-                                    file.write(markdown)
-
-                                # Look for new links
-                                tree = html.fromstring(content)
-                                links = tree.xpath('//a/@href')
-                                for link in links:
-                                    absolute_url = urljoin(current_url, link)
-                                    if urlparse(absolute_url).netloc == urlparse(url).netloc:
-                                        to_visit.append((absolute_url, depth + 1))
-                                        total_urls += 1
-
-                # Check if adding this content would exceed the size limit
-                if total_size_bytes + content_size > max_size_bytes:
-                    crawl_progress(1, desc="Size limit reached. Stopping crawl.")
+            current_tasks = []
+            for _ in range(min(max_concurrency, len(to_visit))):
+                if not to_visit:
                     break
+                current_url, current_depth = to_visit.pop(0)
+                if current_url not in visited:
+                    visited.add(current_url)
+                    task = asyncio.create_task(process_url(session, current_url, current_depth, max_depth, max_size_bytes, semaphore, crawl_progress))
+                    current_tasks.append(task)
+                    logger.info(f"Created task for URL: {current_url} at depth {current_depth}")
 
-                total_size_bytes += content_size
+            if not current_tasks:
+                logger.info("No more tasks to process, breaking the loop")
+                break
 
-                results.append({
-                    'markdown': markdown,
-                    'metadata': {'sourceURL': current_url, 'size_bytes': content_size, 'source': source}
-                })
+            for result in await asyncio.gather(*current_tasks):
+                if result:
+                    results.append(result)
+                    total_size_bytes += result['metadata']['size_bytes']
+                    logger.info(f"Processed {result['metadata']['sourceURL']}. Total size now: {total_size_bytes / (1024 * 1024):.2f} MB")
+                    
+                    for new_url, new_depth in result['new_urls']:
+                        if new_url not in visited and new_url not in scheduled_to_visit:
+                            to_visit.append((new_url, new_depth))
+                            scheduled_to_visit.add(new_url)
+                            logger.info(f"Added new URL to visit: {new_url} at depth {new_depth}")
 
-            except Exception as e:
-                crawl_progress(len(visited) / total_urls, desc=f"Error processing {current_url}: {str(e)}")
+            crawl_progress(0, desc=f"Processed {len(results)} pages. Total size: {total_size_bytes / (1024 * 1024):.2f} MB")
 
-    crawl_progress(1, desc=f"Crawl complete. Total size: {total_size_bytes / (1024 * 1024):.2f} MB")
+    logger.info(f"Crawl complete. Processed {len(results)} pages. Total size: {total_size_bytes / (1024 * 1024):.2f} MB")
+    crawl_progress(0, desc=f"Crawl complete. Total size: {total_size_bytes / (1024 * 1024):.2f} MB")
     return results
 
-def crawl_and_store(url, max_size_mb=10, crawl_progress=gr.Progress()):
-    global in_memory_storage, in_memory_storage_size
+async def crawl_and_store(url, max_size_mb, crawl_progress=gr.Progress()):
     try:
-        load_summaries_from_disk()
-        crawl_results = asyncio.run(crawl_url(url, max_size_mb=max_size_mb, crawl_progress=crawl_progress))
+        await load_summaries_from_disk()
+        crawl_results = await crawl_url(url, max_size_mb=max_size_mb, crawl_progress=crawl_progress)
         
         # Process results
         markdown_contents = []
         total_stored_size = 0
         
-        for i, result in enumerate(crawl_results):
+        # Prepare batch for summarization
+        to_summarize = []
+        for result in crawl_results:
             markdown = result['markdown']
             source_url = result['metadata']['sourceURL']
             content_size = result['metadata']['size_bytes']
@@ -167,81 +237,109 @@ def crawl_and_store(url, max_size_mb=10, crawl_progress=gr.Progress()):
             
             sanitized_filename = sanitize_filename(source_url)
             
-            # Summarize content if not already summarized
-            if sanitized_filename not in summary_store:
-                summary = summarize_content(markdown)
-                summary_store[sanitized_filename] = summary
+            if source_url not in summary_store:  # Use the original URL to check existence
+                to_summarize.append((source_url, markdown))
             
             markdown_contents.append(f"Processed: {source_url} (from {source}). Size: {content_size / 1024:.2f} KB")
             total_stored_size += content_size
-            
-            crawl_progress((i + 1) / len(crawl_results), desc=f"Processed {i + 1}/{len(crawl_results)} pages")
 
-        # Save summaries to disk
-        save_summaries_to_disk()
-
-        # Clear in-memory storage after processing
-        in_memory_storage.clear()
-        in_memory_storage_size = 0
+        # Batch summarization
+        if to_summarize:
+            crawl_progress(0, desc="Summarizing content...")
+            summaries = await summarize_content_batch([content for _, content in to_summarize])
+            for (url, _), summary in zip(to_summarize, summaries):
+                summary_store[url] = summary.strip()  # Use original URL as key
+            await save_summaries_to_disk()
 
         output = f"Total processed size: {total_stored_size / (1024 * 1024):.2f} MB\n" + "\n".join(markdown_contents)
         return output
 
     except Exception as e:
+        logger.error(f"An error occurred during crawling: {str(e)}")
         return f"An error occurred during crawling: {str(e)}"
 
-def summarize_content(content):
-    try:
-        chain = summarize_prompt | llm | StrOutputParser()
-        summary = chain.invoke({"content": content}).strip()
-        return summary
-    except Exception as e:
-        return f"An error occurred during summarization: {str(e)}"
+async def summarize_content_batch(contents, batch_size=5):
+    summaries = []
+    batch = []
+    batch_token_count = 0
 
-def select_relevant_urls(query):
+    for content in contents:
+        content_tokens = len(content.split())  # Estimate token count by word count
+        if batch_token_count + content_tokens > MAX_TOKENS or len(batch) >= batch_size:
+            # Process current batch
+            chain = summarize_prompt | llm | StrOutputParser()
+            batch_summaries = await asyncio.gather(*[chain.ainvoke({"content": part}) for part in batch])
+            summaries.extend(batch_summaries)
+
+            # Reset batch
+            batch = []
+            batch_token_count = 0
+
+        batch.append(content)
+        batch_token_count += content_tokens
+
+    # Process any remaining content
+    if batch:
+        chain = summarize_prompt | llm | StrOutputParser()
+        batch_summaries = await asyncio.gather(*[chain.ainvoke({"content": part}) for part in batch])
+        summaries.extend(batch_summaries)
+
+    return summaries
+
+async def select_relevant_urls(query):
     try:
         summaries = "\n".join([f"{url}: {summary}" for url, summary in summary_store.items()])
         chain = select_urls_prompt | llm | StrOutputParser()
-        selected_urls = chain.invoke({"query": query, "summaries": summaries}).strip()
-        return selected_urls.split(",") if selected_urls else []
+        selected_urls_raw = await chain.ainvoke({"query": query, "summaries": summaries})
+        
+        selected_urls = [url.strip() for url in selected_urls_raw.split(",") if url.strip()]
+        
+        # Validate that all returned URLs are in our summary_store
+        invalid_urls = [url for url in selected_urls if url not in summary_store]
+        if invalid_urls:
+            raise ValueError(f"LLM returned invalid URLs: {', '.join(invalid_urls)}")
+        
+        logger.info(f"Selected URLs for query '{query}': {selected_urls}")
+        return selected_urls
     except Exception as e:
-        return []
+        logger.error(f"An error occurred while selecting relevant URLs: {str(e)}")
+        raise
 
-def answer_query(query):
+async def answer_query(query):
     try:
-        selected_urls = select_relevant_urls(query)
+        selected_urls = await select_relevant_urls(query)
         if not selected_urls:
-            disclaimer = "No relevant URLs were found. "
-        else:
-            disclaimer = ""
+            return "No relevant URLs were found to answer the query.", "No URLs selected."
 
         context_parts = []
+        used_urls = []
         for url in selected_urls:
-            sanitized_filename = sanitize_filename(url.strip())
+            sanitized_filename = sanitize_filename(url)
             file_path = os.path.join("parsed_pages", sanitized_filename)
-            if os.path.exists(file_path):
-                with open(file_path, "r", encoding="utf-8") as file:
-                    context_parts.append(file.read())
+            if await aiofiles.os.path.exists(file_path):
+                async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
+                    content = await file.read()
+                    context_parts.append(content)
+                    used_urls.append(url)
 
-        context = "\n\n".join(context_parts)
-        
+        context_combined = "\n\n".join(context_parts)
+        total_tokens = len(context_combined.split()) + len(query.split())
+        if total_tokens > MAX_TOKENS:
+            return "The query and content exceed the token limit. Try a shorter query or crawl less content.", "Error with token limit"
+
         chain = answer_prompt | llm | StrOutputParser()
-        answer = chain.invoke({"query": query, "context": context})
+        answer = await chain.ainvoke({"query": query, "context": context_combined})
 
         # Convert markdown to HTML
         answer_html = markdown2.markdown(answer)
 
-        urls_output = ", ".join(selected_urls) if selected_urls else "No URLs selected."
+        urls_output = ", ".join(used_urls)
 
-        return disclaimer + answer_html, urls_output
+        return answer_html, urls_output
 
     except Exception as e:
+        logger.error(f"An error occurred while answering the query: {str(e)}")
         return f"An error occurred while answering the query: {str(e)}", "Error retrieving URLs"
-
-def clear_in_memory_storage():
-    global in_memory_storage, in_memory_storage_size
-    in_memory_storage.clear()
-    in_memory_storage_size = 0
 
 def create_interface():
     with gr.Blocks() as demo:
@@ -254,9 +352,10 @@ def create_interface():
             crawl_output = gr.Textbox(label="Stored Markdown Files and Summaries")
             crawl_button = gr.Button("Crawl")
             crawl_progress = gr.Progress()
+            
             crawl_button.click(
                 fn=crawl_and_store, 
-                inputs=[url_input, max_size_input], 
+                inputs=[url_input, max_size_input],  # Pass max_size_input here
                 outputs=crawl_output,
                 show_progress=crawl_progress
             )
@@ -267,11 +366,11 @@ def create_interface():
             urls_output = gr.Textbox(label="Relevant URLs")
             query_button = gr.Button("Query")
             query_button.click(fn=answer_query, inputs=query_input, outputs=[answer_output, urls_output])
-        
-        demo.load(fn=clear_in_memory_storage)
     
     return demo
 
 if __name__ == "__main__":
     demo = create_interface()
-    demo.launch()
+    logger.info("Starting the Gradio interface")
+    demo.launch(server_name="0.0.0.0", server_port=7860)
+    logger.info("Gradio interface stopped")
