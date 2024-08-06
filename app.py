@@ -6,13 +6,16 @@ from langchain_core.output_parsers import StrOutputParser
 import os
 from dotenv import load_dotenv
 from prompts import summarize_prompt, select_urls_prompt, answer_prompt
-import requests
+import asyncio
+import aiohttp
 from bs4 import BeautifulSoup
 from lxml import html
 from urllib.parse import urljoin, urlparse
 import html2text
 import re
 import hashlib
+import markdown2
+import json
 
 # Load environment variables from a .env file
 load_dotenv()
@@ -34,6 +37,11 @@ h.ignore_images = False
 h.ignore_emphasis = False
 h.body_width = 0  # Don't wrap text
 
+# Global in-memory storage
+in_memory_storage = {}
+in_memory_storage_size = 0
+MAX_MEMORY_SIZE = 150 * 1024 * 1024  # 150 MB in bytes
+
 def sanitize_filename(url):
     # Remove the protocol (http:// or https://)
     url = re.sub(r'^https?://', '', url)
@@ -51,97 +59,133 @@ def sanitize_filename(url):
     
     return url + '.md'
 
-def crawl_url(url, max_depth=2, max_size_mb=10, progress=gr.Progress()):
+def html_to_markdown(html_content):
+    return h.handle(html_content)
+
+def save_summaries_to_disk():
+    with open("summaries.json", "w") as f:
+        json.dump(summary_store, f)
+
+def load_summaries_from_disk():
+    global summary_store
+    try:
+        with open("summaries.json", "r") as f:
+            summary_store = json.load(f)
+    except FileNotFoundError:
+        summary_store = {}
+
+async def crawl_url(url, max_depth=2, max_size_mb=10, max_concurrency=5, crawl_progress=gr.Progress()):
+    global in_memory_storage, in_memory_storage_size
     visited = set()
     to_visit = [(url, 0)]
     results = []
     total_size_bytes = 0
     max_size_bytes = max_size_mb * 1024 * 1024  # Convert MB to bytes
+    semaphore = asyncio.Semaphore(max_concurrency)
 
-    progress(0, desc="Starting crawl...")
+    crawl_progress(0, desc="Starting crawl...")
+    total_urls = 1  # Start with 1 for the initial URL
 
-    while to_visit and total_size_bytes < max_size_bytes:
-        current_url, depth = to_visit.pop(0)
-        if current_url in visited or depth > max_depth:
-            continue
+    async with aiohttp.ClientSession() as session:
+        while to_visit and total_size_bytes < max_size_bytes:
+            current_url, depth = to_visit.pop(0)
+            if current_url in visited or depth > max_depth:
+                continue
 
-        visited.add(current_url)
+            visited.add(current_url)
+            sanitized_filename = sanitize_filename(current_url)
+            file_path = os.path.join("parsed_pages", sanitized_filename)
 
-        try:
-            progress(len(visited) / (len(visited) + len(to_visit)), desc=f"Crawling: {current_url}")
-            
-            response = requests.get(current_url, headers={'User-Agent': 'Mozilla/5.0'})
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'lxml')
-                tree = html.fromstring(response.content)
-
-                # Remove script and style elements
-                for script in soup(["script", "style"]):
-                    script.decompose()
-
-                # Convert to markdown
-                markdown = html_to_markdown(str(soup))
+            try:
+                crawl_progress(len(visited) / total_urls, desc=f"Processing: {current_url}")
                 
-                # Calculate size of markdown content
-                content_size = len(markdown.encode('utf-8'))
-                
+                # Check if the URL is already processed
+                if os.path.exists(file_path):
+                    with open(file_path, "r", encoding="utf-8") as file:
+                        markdown = file.read()
+                    source = "disk"
+                    content_size = len(markdown.encode('utf-8'))
+                else:
+                    # Fetch and process new content
+                    async with semaphore:
+                        async with session.get(current_url, headers={'User-Agent': 'Mozilla/5.0'}) as response:
+                            if response.status == 200:
+                                content = await response.text()
+                                soup = BeautifulSoup(content, 'lxml')
+                                for script in soup(["script", "style"]):
+                                    script.decompose()
+                                markdown = html_to_markdown(str(soup))
+                                content_size = len(markdown.encode('utf-8'))
+                                source = "network"
+
+                                # Store the new content
+                                with open(file_path, "w", encoding="utf-8") as file:
+                                    file.write(markdown)
+
+                                # Look for new links
+                                tree = html.fromstring(content)
+                                links = tree.xpath('//a/@href')
+                                for link in links:
+                                    absolute_url = urljoin(current_url, link)
+                                    if urlparse(absolute_url).netloc == urlparse(url).netloc:
+                                        to_visit.append((absolute_url, depth + 1))
+                                        total_urls += 1
+
                 # Check if adding this content would exceed the size limit
                 if total_size_bytes + content_size > max_size_bytes:
-                    progress(1, desc="Size limit reached. Stopping crawl.")
+                    crawl_progress(1, desc="Size limit reached. Stopping crawl.")
                     break
 
                 total_size_bytes += content_size
 
                 results.append({
                     'markdown': markdown,
-                    'metadata': {'sourceURL': current_url, 'size_bytes': content_size}
+                    'metadata': {'sourceURL': current_url, 'size_bytes': content_size, 'source': source}
                 })
 
-                if depth < max_depth:
-                    links = tree.xpath('//a/@href')
-                    for link in links:
-                        absolute_url = urljoin(current_url, link)
-                        if urlparse(absolute_url).netloc == urlparse(url).netloc:
-                            to_visit.append((absolute_url, depth + 1))
+            except Exception as e:
+                crawl_progress(len(visited) / total_urls, desc=f"Error processing {current_url}: {str(e)}")
 
-        except Exception as e:
-            progress(len(visited) / (len(visited) + len(to_visit)), desc=f"Error crawling {current_url}: {str(e)}")
-
-    progress(1, desc=f"Crawl complete. Total size: {total_size_bytes / (1024 * 1024):.2f} MB")
+    crawl_progress(1, desc=f"Crawl complete. Total size: {total_size_bytes / (1024 * 1024):.2f} MB")
     return results
 
-def html_to_markdown(html_content):
-    return h.handle(html_content)
-
-def crawl_and_store(url, max_size_mb=10, progress=gr.Progress()):
+def crawl_and_store(url, max_size_mb=10, crawl_progress=gr.Progress()):
+    global in_memory_storage, in_memory_storage_size
     try:
-        crawl_results = crawl_url(url, max_size_mb=max_size_mb, progress=progress)
-
+        load_summaries_from_disk()
+        crawl_results = asyncio.run(crawl_url(url, max_size_mb=max_size_mb, crawl_progress=crawl_progress))
+        
+        # Process results
         markdown_contents = []
         total_stored_size = 0
-        
-        progress(0, desc="Processing crawled content...")
         
         for i, result in enumerate(crawl_results):
             markdown = result['markdown']
             source_url = result['metadata']['sourceURL']
             content_size = result['metadata']['size_bytes']
+            source = result['metadata']['source']
+            
             sanitized_filename = sanitize_filename(source_url)
-            file_path = os.path.join("parsed_pages", sanitized_filename)
             
-            # Write markdown to file
-            with open(file_path, "w", encoding="utf-8") as file:
-                file.write(markdown)
+            # Summarize content if not already summarized
+            if sanitized_filename not in summary_store:
+                summary = summarize_content(markdown)
+                summary_store[sanitized_filename] = summary
             
-            # Summarize content
-            summary = summarize_content(markdown)
-            summary_store[sanitized_filename] = summary
-            markdown_contents.append(f"Stored: {file_path} with summary. Size: {content_size / 1024:.2f} KB")
+            markdown_contents.append(f"Processed: {source_url} (from {source}). Size: {content_size / 1024:.2f} KB")
             total_stored_size += content_size
             
-            progress((i + 1) / len(crawl_results), desc=f"Processed {i + 1}/{len(crawl_results)} pages")
+            crawl_progress((i + 1) / len(crawl_results), desc=f"Processed {i + 1}/{len(crawl_results)} pages")
 
-        return f"Total stored size: {total_stored_size / (1024 * 1024):.2f} MB\n" + "\n".join(markdown_contents)
+        # Save summaries to disk
+        save_summaries_to_disk()
+
+        # Clear in-memory storage after processing
+        in_memory_storage.clear()
+        in_memory_storage_size = 0
+
+        output = f"Total processed size: {total_stored_size / (1024 * 1024):.2f} MB\n" + "\n".join(markdown_contents)
+        return output
 
     except Exception as e:
         return f"An error occurred during crawling: {str(e)}"
@@ -184,38 +228,50 @@ def answer_query(query):
         chain = answer_prompt | llm | StrOutputParser()
         answer = chain.invoke({"query": query, "context": context})
 
+        # Convert markdown to HTML
+        answer_html = markdown2.markdown(answer)
+
         urls_output = ", ".join(selected_urls) if selected_urls else "No URLs selected."
 
-        return disclaimer + answer, urls_output
+        return disclaimer + answer_html, urls_output
 
     except Exception as e:
         return f"An error occurred while answering the query: {str(e)}", "Error retrieving URLs"
 
-# Gradio interfaces for crawling and querying
-crawl_interface = gr.Interface(
-    fn=crawl_and_store,
-    inputs=[
-        gr.Textbox(label="Website URL"),
-        gr.Number(label="Max Size (MB)", value=10)
-    ],
-    outputs=gr.Textbox(label="Stored Markdown Files and Summaries"),
-    title="Website Crawler",
-    description="Enter a website URL to crawl. The crawler will stop when the total size of crawled content reaches the specified limit.",
-)
+def clear_in_memory_storage():
+    global in_memory_storage, in_memory_storage_size
+    in_memory_storage.clear()
+    in_memory_storage_size = 0
 
-query_interface = gr.Interface(
-    fn=answer_query,
-    inputs=gr.Textbox(label="Your Query"),
-    outputs=[
-        gr.Textbox(label="Answer"),
-        gr.Textbox(label="Relevant URLs"),
-    ],
-    title="Query Assistant",
-    description="Enter a query to get an answer based on the crawled content stored in files. The relevant URLs used as context will also be shown.",
-)
-
-# Combine interfaces into a tabbed interface
-iface = gr.TabbedInterface([crawl_interface, query_interface], ["Crawl Website", "Query Content"])
+def create_interface():
+    with gr.Blocks() as demo:
+        gr.Markdown("# Website Crawler and Query Assistant")
+        
+        with gr.Tab("Crawl Website"):
+            with gr.Row():
+                url_input = gr.Textbox(label="Website URL", scale=4)
+                max_size_input = gr.Number(label="Max Size (MB)", value=10, scale=1)
+            crawl_output = gr.Textbox(label="Stored Markdown Files and Summaries")
+            crawl_button = gr.Button("Crawl")
+            crawl_progress = gr.Progress()
+            crawl_button.click(
+                fn=crawl_and_store, 
+                inputs=[url_input, max_size_input], 
+                outputs=crawl_output,
+                show_progress=crawl_progress
+            )
+        
+        with gr.Tab("Query Content"):
+            query_input = gr.Textbox(label="Your Query")
+            answer_output = gr.HTML(label="Answer")
+            urls_output = gr.Textbox(label="Relevant URLs")
+            query_button = gr.Button("Query")
+            query_button.click(fn=answer_query, inputs=query_input, outputs=[answer_output, urls_output])
+        
+        demo.load(fn=clear_in_memory_storage)
+    
+    return demo
 
 if __name__ == "__main__":
-    iface.launch()
+    demo = create_interface()
+    demo.launch()
