@@ -75,6 +75,8 @@ def sanitize_filename(url):
 
 def html_to_markdown(html_content):
     return h.handle(html_content)
+def html_to_markdown(html_content):
+    return h.handle(html_content)
 
 async def save_summaries_to_disk():
     async with aiofiles.open("summaries.json", "w") as f:
@@ -85,6 +87,7 @@ async def load_summaries_from_disk():
     try:
         async with aiofiles.open("summaries.json", "r") as f:
             content = await f.read()
+            summary_store = json.loads(content)
             summary_store = json.loads(content)
     except FileNotFoundError:
         summary_store = {}
@@ -164,6 +167,58 @@ async def process_url(session, url, depth, max_depth, max_size_bytes, semaphore,
         crawl_progress(0, desc=f"Error processing {url}: {str(e)}")
         return None
 
+async def process_url(session, url, depth, max_depth, max_size_bytes, semaphore, crawl_progress):
+    if depth > max_depth:
+        return None
+
+    sanitized_filename = sanitize_filename(url)
+    file_path = os.path.join("parsed_pages", sanitized_filename)
+
+    try:
+        crawl_progress(0, desc=f"Crawling: {url}")
+        
+        async with semaphore:
+            # Check if the URL is already processed
+            if await aiofiles.os.path.exists(file_path):
+                async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
+                    markdown = await file.read()
+                source = "disk"
+                content_size = len(markdown.encode('utf-8'))
+            else:
+                # Fetch and process new content
+                async with session.get(url, headers={'User-Agent': 'Mozilla/5.0'}) as response:
+                    if response.status == 200:
+                        content = await response.text()
+                        soup = BeautifulSoup(content, 'html.parser')
+                        for script in soup(["script", "style"]):
+                            script.decompose()
+                        markdown = html_to_markdown(str(soup))
+                        content_size = len(markdown.encode('utf-8'))
+                        source = "network"
+
+                        # Store the new content
+                        async with aiofiles.open(file_path, "w", encoding="utf-8") as file:
+                            await file.write(markdown)
+
+        # Look for new links
+        soup = BeautifulSoup(markdown, 'html.parser')
+        new_urls = []
+        for link in soup.find_all('a', href=True):
+            absolute_url = urljoin(url, link['href'])
+            if urlparse(absolute_url).netloc == urlparse(url).netloc:
+                new_urls.append((absolute_url, depth + 1))
+
+        return {
+            'markdown': markdown,
+            'metadata': {'sourceURL': url, 'size_bytes': content_size, 'source': source},
+            'new_urls': new_urls
+        }
+
+    except Exception as e:
+        logger.error(f"Error processing {url}: {str(e)}")
+        crawl_progress(0, desc=f"Error processing {url}: {str(e)}")
+        return None
+
 async def crawl_url(url, max_depth=2, max_size_mb=10, max_concurrency=5, crawl_progress=gr.Progress()):
     results = []
     total_size_bytes = 0
@@ -180,11 +235,22 @@ async def crawl_url(url, max_depth=2, max_size_mb=10, max_concurrency=5, crawl_p
             done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             for task in done:
                 result = await task
+        tasks = set([asyncio.create_task(process_url(session, url, 0, max_depth, max_size_bytes, semaphore, crawl_progress))])
+        visited = set([url])
+
+        while tasks and total_size_bytes < max_size_bytes:
+            done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in done:
+                result = await task
                 if result:
                     results.append(result)
                     total_size_bytes += result['metadata']['size_bytes']
                     
                     for new_url, new_depth in result['new_urls']:
+                        if new_url not in visited and new_depth <= max_depth:
+                            visited.add(new_url)
+                            if total_size_bytes < max_size_bytes:
+                                tasks.add(asyncio.create_task(process_url(session, new_url, new_depth, max_depth, max_size_bytes, semaphore, crawl_progress)))
                         if new_url not in visited and new_depth <= max_depth:
                             visited.add(new_url)
                             if total_size_bytes < max_size_bytes:
@@ -225,6 +291,8 @@ async def crawl_and_store(url, max_size_mb=10, crawl_progress=gr.Progress()):
             
             if sanitized_filename not in summary_store:
                 to_summarize.append((sanitized_filename, markdown))
+            if sanitized_filename not in summary_store:
+                to_summarize.append((sanitized_filename, markdown))
             
             markdown_contents.append(f"Processed: {source_url} (from {source}). Size: {content_size / 1024:.2f} KB")
             total_stored_size += content_size
@@ -238,6 +306,15 @@ async def crawl_and_store(url, max_size_mb=10, crawl_progress=gr.Progress()):
 
         # Save summaries to disk
         await save_summaries_to_disk()
+            for (filename, _), summary in zip(to_summarize, summaries):
+                summary_store[filename] = summary.strip()
+
+        # Save summaries to disk
+        await save_summaries_to_disk()
+
+        # Clear in-memory storage after processing
+        in_memory_storage.clear()
+        in_memory_storage_size = 0
 
         output = f"Total processed size: {total_stored_size / (1024 * 1024):.2f} MB\n" + "\n".join(markdown_contents)
         return output
@@ -252,8 +329,11 @@ async def select_relevant_urls(query):
         chain = select_urls_prompt | llm | StrOutputParser()
         selected_urls = await chain.ainvoke({"query": query, "summaries": summaries})
         return selected_urls.strip().split(",") if selected_urls.strip() else []
+        selected_urls = await chain.ainvoke({"query": query, "summaries": summaries})
+        return selected_urls.strip().split(",") if selected_urls.strip() else []
     except Exception as e:
         logger.error(f"An error occurred while selecting relevant URLs: {str(e)}")
+        return []
         return []
 
 async def answer_query(query):
@@ -269,9 +349,7 @@ async def answer_query(query):
             file_path = os.path.join("parsed_pages", sanitized_filename)
             if await aiofiles.os.path.exists(file_path):
                 async with aiofiles.open(file_path, "r", encoding="utf-8") as file:
-                    content = await file.read()
-                    context_parts.append(content)
-                    used_urls.append(url)
+                    context_parts.append(await file.read())
 
         context = "\n\n".join(context_parts)
         total_tokens = len(context.split()) + len(query.split())
@@ -279,6 +357,7 @@ async def answer_query(query):
             return "The query and content exceed the token limit. Try a shorter query or crawl less content.", "Error with token limit"
 
         chain = answer_prompt | llm | StrOutputParser()
+        answer = await chain.ainvoke({"query": query, "context": context})
         answer = await chain.ainvoke({"query": query, "context": context})
 
         # Convert markdown to HTML
