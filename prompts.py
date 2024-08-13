@@ -23,6 +23,7 @@ Guidelines:
 3. Be concise but comprehensive. Aim for 3-5 key points per URL.
 4. If a page doesn't contain relevant business information, briefly state what the page is about instead.
 5. Maintain objectivity and avoid personal opinions or evaluations.
+6. Ensure you include the original URL at the beginning of each summary.
 
 Summarize the following content from multiple URLs:
 
@@ -44,6 +45,7 @@ Guidelines:
 
 Output format:
 - Provide only the selected URLs, separated by commas.
+- Include the full original URLs, not just the sanitized versions.
 - Do not include any explanation or additional text.
 
 Query: {query}
@@ -68,11 +70,13 @@ Guidelines:
 7. Provide specific examples or data points from the context to illustrate your points.
 8. Summarize key takeaways at the end of your answer.
 9. Keep your answer concise while ensuring it's comprehensive and informative.
+10. When referencing information from a specific URL, create a hyperlink using Markdown syntax: [anchor text](URL).
+11. Ensure all URLs used in hyperlinks are the full, original URLs provided in the context.
 
 Output format:
 1. Begin with a brief introduction that sets the context for your answer.
 2. Use markdown formatting for structure (e.g., ## for headings, - for bullet points).
-3. Cite sources using footnotes in the format [^1], [^2], etc., with the full URLs listed at the end of your answer.
+3. Use hyperlinks to cite sources directly in the text, as described in guideline 10.
 4. Conclude with a "Key Takeaways" section that summarizes the main points.
 
 Query: {query}
