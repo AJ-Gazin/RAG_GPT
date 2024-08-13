@@ -10,6 +10,7 @@ import logging
 from prompts import summarize_prompt, select_urls_prompt, answer_prompt
 from theme import BusinessAnalyzerTheme
 
+
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -39,20 +40,20 @@ def extract_relevant_text(html_content):
     doc = Document(html_content)
     return doc.summary()
 
-def crawl_website(url, progress=gr.Progress()):
+def crawl_website(url, max_pages, progress=gr.Progress()):
     logging.info(f"Starting crawl for: {url}")
     visited = set()
     to_visit = [url]
     pages_crawled = 0
     total_tokens = 0
 
-    while to_visit and pages_crawled < MAX_PAGES and total_tokens < MAX_TOKENS:
+    while to_visit and pages_crawled < max_pages and total_tokens < MAX_TOKENS:
         current_url = to_visit.pop(0)
 
         if current_url in visited:
             continue
 
-        progress((pages_crawled / MAX_PAGES), f"Crawling: {current_url}")
+        progress((pages_crawled / max_pages), f"Crawling: {current_url}")
         logging.info(f"Crawling: {current_url}")
 
         try:
@@ -229,42 +230,48 @@ def set_api_key(api_key):
         logging.error(f"Error setting or testing API key: {str(e)}")
         return f"Failed to set or test API key: {str(e)}"
 
+
 def create_interface():
-    theme = BusinessAnalyzerTheme()
-    
-    with gr.Blocks(theme=theme) as demo:
-        gr.Markdown("# Business Website Analyzer")
+    with gr.Blocks(css=".center { text-align: center; width: 100%; } .radio-button { flex: 1; text-align: center; }", theme=BusinessAnalyzerTheme()) as demo:
+        gr.Markdown("# Business Website Analyzer", elem_classes="center")
         
-        with gr.Tab("Setup"):
-            api_key_input = gr.Textbox(label="OpenAI API Key", type="password")
-            api_key_output = gr.Textbox(label="Status")
-            
-            api_key_input.submit(
-                fn=set_api_key,
-                inputs=api_key_input,
-                outputs=api_key_output
-            )
-        
-        with gr.Tab("Crawl Website"):
-            url_input = gr.Textbox(label="Website URL")
-            crawl_button = gr.Button("Crawl and Analyze")
-            crawl_output = gr.Textbox(label="Crawl Status")
-            summarize_output = gr.Textbox(label="Summarization Status")
-            
-            crawl_button.click(
-                fn=crawl_website,
-                inputs=url_input,
-                outputs=[summarize_output, crawl_output]
-            )
-        
-        with gr.Tab("Query Content"):
-            query_input = gr.Textbox(label="Your Query")
-            query_button = gr.Button("Ask")
-            with gr.Column():
-                answer_output = gr.Markdown(label="Answer")
-                urls_output = gr.Textbox(label="Sources")
-            query_button.click(fn=query_content, inputs=query_input, outputs=[answer_output, urls_output])
-    
+        with gr.Row():
+            with gr.Column(scale=1):
+                gr.Markdown("## Setup", elem_classes="center")
+                with gr.Row():
+                    api_key_input = gr.Textbox(label="OpenAI API Key", type="password", show_label=False, placeholder="Enter OpenAI API Key", elem_classes="center")
+                    api_status = gr.Markdown(elem_id="api-status")
+                api_key_button = gr.Button("Set API Key", variant="primary")
+
+                gr.Markdown("## Website Crawling", elem_classes="center")
+                url_input = gr.Textbox(label="Website URL", show_label=False, placeholder="Enter Website URL", elem_classes="center")
+                crawl_depth = gr.Radio(
+                    ["Shallow (15 pages)", "Robust (30 pages)", "Comprehensive (60 pages)"],
+                    label="Crawl Depth",
+                    value="Robust (30 pages)",
+                    show_label=False,
+                    elem_classes="center radio-button"
+                )
+                crawl_button = gr.Button("Crawl and Analyze", variant="primary")
+                
+                gr.Markdown("## Content Query", elem_classes="center")
+                query_input = gr.Textbox(label="Enter Your Query", show_label=False, placeholder="Type Your Query", elem_classes="center")
+                query_button = gr.Button("Ask", variant="primary")
+
+            with gr.Column(scale=1):
+                gr.Markdown("## Crawl Results", elem_classes="center")
+                crawl_output = gr.Textbox(label="Crawl Status", show_label=False, placeholder="Crawl Status")
+                summarize_output = gr.Textbox(label="Summarization Status", show_label=False, placeholder="Summarization Status")
+                
+                gr.Markdown("## Query Results", elem_classes="center")
+                answer_output = gr.Markdown()
+                urls_output = gr.Textbox(label="Sources", show_label=False, placeholder="Sources")
+
+        # Event handlers
+        api_key_button.click(fn=set_api_key, inputs=api_key_input, outputs=api_status)
+        crawl_button.click(fn=lambda url, depth: crawl_website(url, {"Shallow (15 pages)": 15, "Robust (30 pages)": 30, "Comprehensive (60 pages)": 60}[depth]), inputs=[url_input, crawl_depth], outputs=[crawl_output, summarize_output])
+        query_button.click(fn=query_content, inputs=query_input, outputs=[answer_output, urls_output])
+
     return demo
 
 if __name__ == "__main__":
