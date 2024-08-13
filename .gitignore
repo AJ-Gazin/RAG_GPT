@@ -1,7 +1,8 @@
 parsed_pages/
 venv/
 temp/
+flagged/
 .env
 prompt_log.txt
-summaries.json
+*.json
 app_kg.py
