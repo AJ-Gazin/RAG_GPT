@@ -7,19 +7,23 @@ import tiktoken
 from readability import Document
 import logging
 import networkx as nx
-import plotly.graph_objects as go
+import plotly.express as px
 import spacy
 import chromadb
-from prompts import summarize_prompt, select_urls_prompt, answer_prompt, extract_entities_prompt
-import numpy as np
+from prompts import summarize_prompt, answer_prompt, extract_entities_prompt
+import pandas as pd
+import json
+from datetime import datetime
+from pydantic import BaseModel
+from typing import List
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Global variables
 MAX_PAGES = 60
-MAX_TOKENS = 8191  # Updated max input tokens for text-embedding-3-small
-MAX_OUTPUT_TOKENS = 16000
+MAX_TOKENS = 128000
+EMBEDDING_MAX_TOKENS = 8192
 client = None
 tokenizer = tiktoken.get_encoding("cl100k_base")
 
@@ -27,150 +31,140 @@ tokenizer = tiktoken.get_encoding("cl100k_base")
 chroma_client = chromadb.Client()
 collection = chroma_client.create_collection(name="website_content")
 
-# Initialize spaCy for NER
+# Initialize spaCy
 nlp = spacy.load("en_core_web_trf")
 
 # Initialize NetworkX graph
 G = nx.Graph()
 
+# Pydantic models
+class Entity(BaseModel):
+    name: str
+    type: str
+
+class Relationship(BaseModel):
+    source: str
+    target: str
+    type: str
+
+class EntityRelationshipExtraction(BaseModel):
+    entities: List[Entity] = []
+    relationships: List[Relationship] = []
+
 def count_tokens(text):
-    """Count the number of tokens in a given text."""
     return len(tokenizer.encode(text))
 
-def sanitize_filename(url):
-    """Sanitize URL to create a valid filename."""
-    url = re.sub(r'^https?://', '', url)
-    url = re.sub(r'[\\/*?:"<>|]', '_', url)
-    return url[:200]  # Limit length to 200 characters
-
-def prioritize_pages(links):
-    """Prioritize links based on keywords."""
-    priority_keywords = ['about', 'services', 'products', 'contact', 'team', 'history']
-    priority_pages = [link for link in links if any(keyword in link.lower() for keyword in priority_keywords)]
-    return priority_pages + [link for link in links if link not in priority_pages]
+def log_token_usage(input_tokens, output_tokens, api_type):
+    log_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "api_type": api_type,
+        "input_tokens": input_tokens,
+        "output_tokens": output_tokens
+    }
+    with open("token_usage_log.jsonl", "a") as log_file:
+        json.dump(log_entry, log_file)
+        log_file.write("\n")
 
 def extract_relevant_text(html_content):
-    """Extract main content from HTML using readability-lxml."""
     doc = Document(html_content)
     return doc.summary()
 
-def get_embedding(text, model="text-embedding-3-small"):
-    """Get embedding for the given text using OpenAI's API."""
-    text = text.replace("\n", " ")
-    try:
-        response = client.embeddings.create(input=[text], model=model, dimensions=1536)
-        return response.data[0].embedding
-    except Exception as e:
-        logging.error(f"Error getting embedding: {str(e)}")
-        return None
+def get_embeddings(texts, model="text-embedding-3-small"):
+    if client is None:
+        logging.error("OpenAI client is not initialized. Please set the API key first.")
+        return [None] * len(texts)
+
+    embeddings = []
+    for text in texts:
+        try:
+            response = client.embeddings.create(input=[text[:EMBEDDING_MAX_TOKENS]], model=model)
+            embeddings.append(response.data[0].embedding)
+        except Exception as e:
+            logging.error(f"Error getting embeddings: {str(e)}")
+            embeddings.append(None)
+    return embeddings
 
 def extract_entities_and_relationships(text, url):
-    """Extract entities and relationships from text using GPT-4o-mini."""
+    if client is None:
+        logging.error("OpenAI client is not initialized. Please set the API key first.")
+        return EntityRelationshipExtraction()
+
     try:
+        input_text = f"Text: {text}\nURL: {url}"
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": extract_entities_prompt},
-                {"role": "user", "content": f"Text: {text}\nURL: {url}"}
+                {"role": "user", "content": input_text}
             ],
-            max_tokens=MAX_OUTPUT_TOKENS
+            response_format={"type": "json_object"}
         )
-        result = response.choices[0].message.content
-        return eval(result)  # Convert string representation of dict to actual dict
+        
+        if response.choices[0].finish_reason == "stop":
+            result = json.loads(response.choices[0].message.content)
+            return EntityRelationshipExtraction(**result)
+        else:
+            logging.error(f"Unexpected finish reason: {response.choices[0].finish_reason}")
+            return EntityRelationshipExtraction()
+        
+    except json.JSONDecodeError as e:
+        logging.error(f"Error decoding JSON response: {str(e)}")
     except Exception as e:
         logging.error(f"Error extracting entities and relationships: {str(e)}")
-        return {'entities': {}, 'relationships': []}
+    
+    return EntityRelationshipExtraction()
 
 def update_knowledge_graph(entities_and_relationships):
-    """Update the knowledge graph with new entities and relationships."""
-    for entity, info in entities_and_relationships['entities'].items():
-        G.add_node(entity, **info)
+    for entity in entities_and_relationships.entities:
+        G.add_node(entity.name, type=entity.type)
     
-    for relation in entities_and_relationships['relationships']:
-        G.add_edge(relation['source'], relation['target'], type=relation['type'])
+    for relation in entities_and_relationships.relationships:
+        G.add_edge(relation.source, relation.target, type=relation.type)
 
 def create_plotly_graph():
-    """Create a Plotly graph from the NetworkX graph."""
-    pos = nx.spring_layout(G)
+    filtered_graph = G.subgraph([node for node in G if G.degree(node) >= 2])
+    pos = nx.spring_layout(filtered_graph)
     
     edge_x, edge_y = [], []
-    for edge in G.edges():
+    for edge in filtered_graph.edges():
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
 
-    edge_trace = go.Scatter(
-        x=edge_x, y=edge_y,
-        line=dict(width=0.5, color='#888'),
-        hoverinfo='none',
-        mode='lines')
-
-    node_x, node_y = [], []
-    for node in G.nodes():
-        x, y = pos[node]
-        node_x.append(x)
-        node_y.append(y)
-
-    node_trace = go.Scatter(
-        x=node_x, y=node_y,
-        mode='markers',
-        hoverinfo='text',
-        marker=dict(
-            showscale=True,
-            colorscale='YlGnBu',
-            reversescale=True,
-            color=[],
-            size=10,
-            colorbar=dict(
-                thickness=15,
-                title='Node Connections',
-                xanchor='left',
-                titleside='right'
-            ),
-            line_width=2))
-
-    node_adjacencies = []
-    node_text = []
-    for node, adjacencies in enumerate(G.adjacency()):
-        node_adjacencies.append(len(adjacencies[1]))
-        node_text.append(f'{adjacencies[0]}<br># of connections: {len(adjacencies[1])}')
-
-    node_trace.marker.color = node_adjacencies
-    node_trace.text = node_text
-
-    fig = go.Figure(data=[edge_trace, node_trace],
-                    layout=go.Layout(
-                        title='Website Knowledge Graph',
-                        titlefont_size=16,
-                        showlegend=False,
-                        hovermode='closest',
-                        margin=dict(b=20,l=5,r=5,t=40),
-                        annotations=[ dict(
-                            text="",
-                            showarrow=False,
-                            xref="paper", yref="paper",
-                            x=0.005, y=-0.002 ) ],
-                        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
-                    )
+    node_df = pd.DataFrame({
+        'x': [pos[node][0] for node in filtered_graph.nodes()],
+        'y': [pos[node][1] for node in filtered_graph.nodes()],
+        'text': [f'{node}<br># of connections: {filtered_graph.degree(node)}' for node in filtered_graph.nodes()],
+        'size': [5 + filtered_graph.degree(node) for node in filtered_graph.nodes()]
+    })
+    
+    fig = px.scatter(node_df, x='x', y='y', size='size', text='text',
+                     title='Website Knowledge Graph',
+                     labels={'x': '', 'y': ''},
+                     color='size',
+                     color_continuous_scale='YlGnBu')
+    
+    fig.add_trace(px.line(x=edge_x, y=edge_y).data[0])
+    
+    fig.update_traces(textposition='top center', marker=dict(sizemin=5))
+    fig.update_layout(showlegend=False,
+                      xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+                      yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
     
     return fig
 
 def crawl_website(url, max_pages, progress=None):
-    """Crawl website, extract content, and build knowledge graph."""
     global G
-    G = nx.Graph()  # Reset the graph for each new crawl
+    G = nx.Graph()
     
     visited = set()
     to_visit = [url]
     pages_crawled = 0
-    total_tokens = 0
     summary_store = {}
 
-    while to_visit and pages_crawled < max_pages and total_tokens < MAX_TOKENS:
+    while to_visit and pages_crawled < max_pages:
         current_url = to_visit.pop(0)
-
         if current_url in visited:
             continue
 
@@ -182,27 +176,14 @@ def crawl_website(url, max_pages, progress=None):
             response = requests.get(current_url, headers={'User-Agent': 'Mozilla/5.0'})
             if response.status_code == 200 and 'text/html' in response.headers.get('Content-Type', ''):
                 soup = BeautifulSoup(response.text, 'lxml')
-
                 text = extract_relevant_text(response.text)
-                text = f"URL: {current_url}\n\n{text}"
+                summary_store[current_url] = f"URL: {current_url}\n\n{text}"
 
-                text_tokens = count_tokens(text)
-                if total_tokens + text_tokens > MAX_TOKENS:
-                    logging.warning("Token limit reached, stopping crawl.")
-                    break
-
-                summary_store[current_url] = text
-                total_tokens += text_tokens
-
-                new_links = []
                 for link in soup.find_all('a', href=True):
                     new_url = urljoin(current_url, link['href'])
                     new_url = urlparse(new_url)._replace(fragment='').geturl()
                     if urlparse(new_url).netloc == urlparse(url).netloc and new_url not in visited and new_url not in to_visit:
-                        new_links.append(new_url)
-
-                prioritized_links = prioritize_pages(new_links)
-                to_visit.extend(prioritized_links)
+                        to_visit.append(new_url)
 
                 visited.add(current_url)
                 pages_crawled += 1
@@ -213,109 +194,75 @@ def crawl_website(url, max_pages, progress=None):
     if progress:
         progress(1.0, f"Crawling complete. Pages crawled: {pages_crawled}")
     
-    for current_url, text in summary_store.items():
-        # Generate embedding for the text
-        embedding = get_embedding(text, model="text-embedding-3-small")
-        if embedding is None:
-            continue
+    texts = list(summary_store.values())
+    urls = list(summary_store.keys())
+    embeddings = get_embeddings(texts)
+    
+    for text, url, embedding in zip(texts, urls, embeddings):
+        if embedding is not None:
+            collection.add(
+                documents=[text],
+                embeddings=[embedding],
+                metadatas=[{"url": url}],
+                ids=[url.replace("://", "_").replace("/", "_")]
+            )
         
-        # Add to Chroma
-        collection.add(
-            documents=[text],
-            embeddings=[embedding],
-            metadatas=[{"url": current_url}],
-            ids=[sanitize_filename(current_url)]
-        )
-        
-        # Extract entities and relationships
-        entities_and_relationships = extract_entities_and_relationships(text, current_url)
+        entities_and_relationships = extract_entities_and_relationships(text, url)
         update_knowledge_graph(entities_and_relationships)
     
-    # Generate the Plotly graph
     fig = create_plotly_graph()
     
     return "Crawling and Knowledge Graph generation complete.", "Summarization complete.", fig
 
-def cosine_similarity(a, b):
-    """Compute cosine similarity between two vectors."""
-    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
-
 def query_content(query):
-    """Process user query and generate an answer."""
-    logging.info("Query processing started.")
-    
-    # Generate embedding for the query
-    query_embedding = get_embedding(query, model="text-embedding-3-small")
+    if client is None:
+        return "Error: OpenAI client is not initialized. Please set the API key first.", ""
+
+    query_embedding = get_embeddings([query])[0]
     if query_embedding is None:
         return "Error: Failed to process query. Please try again.", ""
     
-    # Search for relevant documents
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=5
     )
     
-    relevant_texts = results['documents'][0]
+    context = "\n\n".join(results['documents'][0])
     relevant_urls = [metadata['url'] for metadata in results['metadatas'][0]]
     
-    context = "\n\n".join(relevant_texts)
-    
-    # Ensure we're within token limit
-    while count_tokens(context) + count_tokens(query) + count_tokens(answer_prompt) > MAX_TOKENS:
-        context = "\n\n".join(context.split("\n\n")[:-1])  # Remove the last text
-    
-    # Generate answer
     try:
-        answer = client.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": answer_prompt},
                 {"role": "user", "content": f"Query: {query}\nContext:\n{context}"}
             ],
-            max_tokens=MAX_OUTPUT_TOKENS
-        ).choices[0].message.content
-        logging.info("Answer generated successfully.")
+            response_format={"type": "json_object"}
+        )
+        
+        if response.choices[0].finish_reason == "stop":
+            result = json.loads(response.choices[0].message.content)
+            answer = result.get("answer", "No answer provided.")
+            confidence = result.get("confidence", "Unknown")
+            additional_info = result.get("additional_info", "")
+            
+            formatted_answer = f"{answer}\n\nConfidence: {confidence}\n\nAdditional Info: {additional_info}"
+            return formatted_answer, ", ".join(relevant_urls)
+        else:
+            logging.error(f"Unexpected finish reason: {response.choices[0].finish_reason}")
+            return "Error: Unexpected response from the model. Please try again.", ""
+        
+    except json.JSONDecodeError as e:
+        logging.error(f"Error decoding JSON response: {str(e)}")
     except Exception as e:
         logging.error(f"Error generating answer: {str(e)}")
-        return "Error: An error occurred while generating the answer. Please check the logs.", ""
-
-    # Add knowledge graph information to the answer
-    graph_info = analyze_graph(query)
-    answer += f"\n\nKnowledge Graph Insights:\n{graph_info}"
     
-    logging.info("Query processing completed.")
-    return answer, ", ".join(relevant_urls)
-
-def analyze_graph(query):
-    """Analyze the knowledge graph based on the query."""
-    info = []
-    info.append(f"Total entities: {G.number_of_nodes()}")
-    info.append(f"Total relationships: {G.number_of_edges()}")
-    
-    # Find most connected entities
-    degree_centrality = nx.degree_centrality(G)
-    top_entities = sorted(degree_centrality, key=degree_centrality.get, reverse=True)[:5]
-    info.append("Top connected entities:")
-    for entity in top_entities:
-        info.append(f"- {entity}")
-    
-    # Find entities most relevant to the query
-    query_doc = nlp(query)
-    query_entities = [ent.text for ent in query_doc.ents]
-    relevant_entities = [node for node in G.nodes() if any(entity.lower() in node.lower() for entity in query_entities)]
-    if relevant_entities:
-        info.append("Query-relevant entities:")
-        for entity in relevant_entities[:5]:
-            info.append(f"- {entity}")
-    
-    return "\n".join(info)
+    return "Error: An error occurred while generating the answer. Please try again.", ""
 
 def set_api_key(api_key):
-    """Set and test the OpenAI API key."""
     global client
     try:
         client = OpenAI(api_key=api_key)
-        # Test the API key
         client.models.list()
         logging.info("API key set and tested successfully.")
         return "API key set and tested successfully."

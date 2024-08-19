@@ -1,0 +1,714 @@
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: 'Beta' object has no attribute 'chat'
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.beta.chat.completions.parse(
+               ^^^^^^^^^^^^^^^^
+AttributeError: 'Beta' object has no attribute 'chat'
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 150, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "Missing required parameter: 'response_format.json_schema.name'.", 'type': 'invalid_request_error', 'param': 'response_format.json_schema.name', 'code': 'missing_required_parameter'}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 134, in extract_entities_and_relationships
+    response = client.chat.completions.create(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_utils\_utils.py", line 277, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\resources\chat\completions.py", line 646, in create
+    return self._post(
+           ^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1266, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 942, in request
+    return self._request(
+           ^^^^^^^^^^^^^^
+  File "C:\Users\aj\Code\RAG_GPT\venv\Lib\site-packages\openai\_base_client.py", line 1046, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "'messages' must contain the word 'json' in some form, to use 'response_format' of type 'json_object'.", 'type': 'invalid_request_error', 'param': 'messages', 'code': None}}
+Error extracting entities and relationships: name 'safe_parse_json' is not defined
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 143, in extract_entities_and_relationships
+    result = safe_parse_json(response.choices[0].message.content)
+             ^^^^^^^^^^^^^^^
+NameError: name 'safe_parse_json' is not defined
+Error extracting entities and relationships: name 'safe_parse_json' is not defined
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 143, in extract_entities_and_relationships
+    result = safe_parse_json(response.choices[0].message.content)
+             ^^^^^^^^^^^^^^^
+NameError: name 'safe_parse_json' is not defined
+Error extracting entities and relationships: name 'safe_parse_json' is not defined
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 143, in extract_entities_and_relationships
+    result = safe_parse_json(response.choices[0].message.content)
+             ^^^^^^^^^^^^^^^
+NameError: name 'safe_parse_json' is not defined
+Error extracting entities and relationships: name 'safe_parse_json' is not defined
+Traceback (most recent call last):
+  File "c:\Users\aj\Code\RAG_GPT\logic.py", line 143, in extract_entities_and_relationships
+    result = safe_parse_json(response.choices[0].message.content)
+             ^^^^^^^^^^^^^^^
+NameError: name 'safe_parse_json' is not defined
