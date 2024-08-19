@@ -28,7 +28,7 @@ chroma_client = chromadb.Client()
 collection = chroma_client.create_collection(name="website_content")
 
 # Initialize spaCy for NER
-nlp = spacy.load("en_core_web_sm")
+nlp = spacy.load("en_core_web_trf")
 
 # Initialize NetworkX graph
 G = nx.Graph()
