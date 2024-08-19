@@ -86,3 +86,59 @@ Context:
 
 Answer:
 """
+
+# Prompt for entity and relationship extraction
+extract_entities_prompt = """
+You are an AI assistant specialized in extracting entities and their relationships from business website content. Your task is to analyze the given text and identify key entities (such as people, products, services, locations, etc.) and the relationships between them.
+
+Guidelines:
+1. Identify entities such as:
+   - People (e.g., founders, executives, team members)
+   - Products or Services
+   - Company names (including the main company and any mentioned partners or competitors)
+   - Locations (e.g., headquarters, office locations)
+   - Technologies or Tools
+   - Industry-specific terms
+
+2. For each entity, provide additional information if available:
+   - Type (e.g., Person, Product, Company, Location)
+   - Role or description
+
+3. Identify relationships between entities, such as:
+   - "works for" (Person to Company)
+   - "offers" (Company to Product/Service)
+   - "located in" (Company to Location)
+   - "uses" (Company to Technology)
+   - "partners with" (Company to Company)
+
+4. Ensure that the relationships are directional and meaningful.
+
+5. If the text doesn't contain enough information for meaningful entities or relationships, return empty lists.
+
+Output format:
+Return a Python dictionary with two keys: 'entities' and 'relationships'. 
+- 'entities' should be a dictionary where keys are entity names and values are dictionaries containing 'type' and optionally 'description'.
+- 'relationships' should be a list of dictionaries, each containing 'source', 'target', and 'type'.
+
+Example output:
+{
+    'entities': {
+        'John Doe': {'type': 'Person', 'description': 'CEO'},
+        'Acme Corp': {'type': 'Company'},
+        'Widget Pro': {'type': 'Product', 'description': 'Flagship product'},
+        'New York': {'type': 'Location'}
+    },
+    'relationships': [
+        {'source': 'John Doe', 'target': 'Acme Corp', 'type': 'works for'},
+        {'source': 'Acme Corp', 'target': 'Widget Pro', 'type': 'offers'},
+        {'source': 'Acme Corp', 'target': 'New York', 'type': 'located in'}
+    ]
+}
+
+Analyze the following text and extract entities and relationships:
+
+Text: {text}
+URL: {url}
+
+Extracted Entities and Relationships:
+"""
