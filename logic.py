@@ -122,7 +122,13 @@ def update_knowledge_graph(entities_and_relationships):
         G.add_edge(relation.source, relation.target, type=relation.type)
 
 def create_plotly_graph():
-    filtered_graph = G.subgraph([node for node in G if G.degree(node) >= 2])
+    """Create a Plotly Express graph from the NetworkX graph, showing only nodes with 2+ connections."""
+    # Filter nodes with less than 2 connections for visualization
+    filtered_graph = G.subgraph([node for node in G.nodes() if G.degree(node) >= 2])
+    
+    if not filtered_graph.nodes():
+        return px.scatter(title="No nodes with 2+ connections to display")
+
     pos = nx.spring_layout(filtered_graph)
     
     edge_x, edge_y = [], []
@@ -135,12 +141,12 @@ def create_plotly_graph():
     node_df = pd.DataFrame({
         'x': [pos[node][0] for node in filtered_graph.nodes()],
         'y': [pos[node][1] for node in filtered_graph.nodes()],
-        'text': [f'{node}<br># of connections: {filtered_graph.degree(node)}' for node in filtered_graph.nodes()],
-        'size': [5 + filtered_graph.degree(node) for node in filtered_graph.nodes()]
+        'text': [f'{node}<br># of connections: {G.degree(node)}' for node in filtered_graph.nodes()],
+        'size': [5 + G.degree(node) for node in filtered_graph.nodes()]
     })
     
     fig = px.scatter(node_df, x='x', y='y', size='size', text='text',
-                     title='Website Knowledge Graph',
+                     title=f'Website Knowledge Graph (Showing {len(filtered_graph)} nodes with 2+ connections)',
                      labels={'x': '', 'y': ''},
                      color='size',
                      color_continuous_scale='YlGnBu')
