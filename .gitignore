@@ -2,6 +2,8 @@ parsed_pages/
 venv/
 temp/
 flagged/
+embeddings/
+graphs/
 .env
 prompt_log.txt
 *.json

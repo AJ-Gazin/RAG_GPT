@@ -1,277 +1,254 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import re
 from openai import OpenAI
 import tiktoken
-from readability import Document
-import logging
-import networkx as nx
-import plotly.express as px
-import spacy
-import chromadb
-from prompts import summarize_prompt, answer_prompt, extract_entities_prompt
-import pandas as pd
-import json
 from datetime import datetime
-from pydantic import BaseModel
-from typing import List
+import logging
+from llama_index.core import (
+    VectorStoreIndex,
+    Document,
+    StorageContext,
+    Settings,
+    load_index_from_storage,
+)
+from llama_index.core import KnowledgeGraphIndex
+from llama_index.core.graph_stores import SimpleGraphStore
+from llama_index.llms.openai import OpenAI as LlamaOpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
+
+import networkx as nx
+from pyvis.network import Network
+
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Global variables
-MAX_PAGES = 60
 MAX_TOKENS = 128000
-EMBEDDING_MAX_TOKENS = 8192
-client = None
+MAX_OUTPUT_TOKENS = 16000
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 tokenizer = tiktoken.get_encoding("cl100k_base")
+summary_store = {}
 
-# Initialize Chroma client
-chroma_client = chromadb.Client()
-collection = chroma_client.create_collection(name="website_content")
-
-# Initialize spaCy
-nlp = spacy.load("en_core_web_trf")
-
-# Initialize NetworkX graph
-G = nx.Graph()
-
-# Pydantic models
-class Entity(BaseModel):
-    name: str
-    type: str
-
-class Relationship(BaseModel):
-    source: str
-    target: str
-    type: str
-
-class EntityRelationshipExtraction(BaseModel):
-    entities: List[Entity] = []
-    relationships: List[Relationship] = []
+# Configure global settings
+Settings.llm = LlamaOpenAI(model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY"))
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small", api_key=os.getenv("OPENAI_API_KEY"))
+Settings.chunk_size = 1024
+Settings.chunk_overlap = 20
 
 def count_tokens(text):
     return len(tokenizer.encode(text))
 
-def log_token_usage(input_tokens, output_tokens, api_type):
-    log_entry = {
-        "timestamp": datetime.now().isoformat(),
-        "api_type": api_type,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens
-    }
-    with open("token_usage_log.jsonl", "a") as log_file:
-        json.dump(log_entry, log_file)
-        log_file.write("\n")
+def extract_text_from_html(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    for script in soup(["script", "style"]):
+        script.decompose()
+    text = soup.get_text()
+    lines = (line.strip() for line in text.splitlines())
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    text = '\n'.join(chunk for chunk in chunks if chunk)
+    return text
 
-def extract_relevant_text(html_content):
-    doc = Document(html_content)
-    return doc.summary()
+def prioritize_pages(links):
+    priority_keywords = ['about', 'services', 'products', 'contact', 'team', 'history']
+    return sorted(links, key=lambda link: any(keyword in link.lower() for keyword in priority_keywords), reverse=True)
 
-def get_embeddings(texts, model="text-embedding-3-small"):
-    if client is None:
-        logging.error("OpenAI client is not initialized. Please set the API key first.")
-        return [None] * len(texts)
-
-    embeddings = []
-    for text in texts:
-        try:
-            response = client.embeddings.create(input=[text[:EMBEDDING_MAX_TOKENS]], model=model)
-            embeddings.append(response.data[0].embedding)
-        except Exception as e:
-            logging.error(f"Error getting embeddings: {str(e)}")
-            embeddings.append(None)
-    return embeddings
-
-def extract_entities_and_relationships(text, url):
-    if client is None:
-        logging.error("OpenAI client is not initialized. Please set the API key first.")
-        return EntityRelationshipExtraction()
-
+def crawl_page(current_url, visited, to_visit, max_tokens, total_tokens):
     try:
-        input_text = f"Text: {text}\nURL: {url}"
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": extract_entities_prompt},
-                {"role": "user", "content": input_text}
-            ],
-            response_format={"type": "json_object"}
-        )
-        
-        if response.choices[0].finish_reason == "stop":
-            result = json.loads(response.choices[0].message.content)
-            return EntityRelationshipExtraction(**result)
-        else:
-            logging.error(f"Unexpected finish reason: {response.choices[0].finish_reason}")
-            return EntityRelationshipExtraction()
-        
-    except json.JSONDecodeError as e:
-        logging.error(f"Error decoding JSON response: {str(e)}")
+        response = requests.get(current_url, headers={'User-Agent': 'Mozilla/5.0'})
+        if response.status_code == 200 and 'text/html' in response.headers.get('Content-Type', ''):
+            text = f"URL: {current_url}\n\n{extract_text_from_html(response.text)}"
+            text_tokens = count_tokens(text)
+            if total_tokens + text_tokens > max_tokens:
+                logging.warning("Token limit reached, stopping crawl.")
+                return None, total_tokens
+            summary_store[current_url] = text
+            total_tokens += text_tokens
+            soup = BeautifulSoup(response.text, 'html.parser')
+            new_links = [
+                urljoin(current_url, link['href'])
+                for link in soup.find_all('a', href=True)
+                if urlparse(urljoin(current_url, link['href'])).netloc == urlparse(current_url).netloc
+                and urljoin(current_url, link['href']) not in visited
+                and urljoin(current_url, link['href']) not in to_visit
+            ]
+            return prioritize_pages(new_links), total_tokens
     except Exception as e:
-        logging.error(f"Error extracting entities and relationships: {str(e)}")
-    
-    return EntityRelationshipExtraction()
+        logging.error(f"Error crawling {current_url}: {str(e)}")
+    return [], total_tokens
 
-def update_knowledge_graph(entities_and_relationships):
-    for entity in entities_and_relationships.entities:
-        G.add_node(entity.name, type=entity.type)
+def crawl_website(url, max_pages):
+    global summary_store
+    summary_store.clear()
     
-    for relation in entities_and_relationships.relationships:
-        G.add_edge(relation.source, relation.target, type=relation.type)
+    logging.info(f"Starting crawl for: {url}")
+    visited, to_visit = set(), [url]
+    pages_crawled, total_tokens = 0, 0
 
-def create_plotly_graph():
-    """Create a Plotly Express graph from the NetworkX graph, showing only nodes with 2+ connections."""
-    # Filter nodes with less than 2 connections for visualization
-    filtered_graph = G.subgraph([node for node in G.nodes() if G.degree(node) >= 2])
-    
-    if not filtered_graph.nodes():
-        return px.scatter(title="No nodes with 2+ connections to display")
-
-    pos = nx.spring_layout(filtered_graph)
-    
-    edge_x, edge_y = [], []
-    for edge in filtered_graph.edges():
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
-        edge_x.extend([x0, x1, None])
-        edge_y.extend([y0, y1, None])
-
-    node_df = pd.DataFrame({
-        'x': [pos[node][0] for node in filtered_graph.nodes()],
-        'y': [pos[node][1] for node in filtered_graph.nodes()],
-        'text': [f'{node}<br># of connections: {G.degree(node)}' for node in filtered_graph.nodes()],
-        'size': [5 + G.degree(node) for node in filtered_graph.nodes()]
-    })
-    
-    fig = px.scatter(node_df, x='x', y='y', size='size', text='text',
-                     title=f'Website Knowledge Graph (Showing {len(filtered_graph)} nodes with 2+ connections)',
-                     labels={'x': '', 'y': ''},
-                     color='size',
-                     color_continuous_scale='YlGnBu')
-    
-    fig.add_trace(px.line(x=edge_x, y=edge_y).data[0])
-    
-    fig.update_traces(textposition='top center', marker=dict(sizemin=5))
-    fig.update_layout(showlegend=False,
-                      xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                      yaxis=dict(showgrid=False, zeroline=False, showticklabels=False))
-    
-    return fig
-
-def crawl_website(url, max_pages, progress=None):
-    global G
-    G = nx.Graph()
-    
-    visited = set()
-    to_visit = [url]
-    pages_crawled = 0
-    summary_store = {}
-
-    while to_visit and pages_crawled < max_pages:
+    while to_visit and pages_crawled < max_pages and total_tokens < MAX_TOKENS:
         current_url = to_visit.pop(0)
         if current_url in visited:
             continue
+        new_links, total_tokens = crawl_page(current_url, visited, to_visit, MAX_TOKENS, total_tokens)
+        to_visit.extend(new_links or [])
+        visited.add(current_url)
+        pages_crawled += 1
+        logging.info(f"Pages crawled: {pages_crawled}")
+        yield pages_crawled, max_pages, f"Crawling: {current_url}"
 
-        if progress:
-            progress((pages_crawled / max_pages), f"Crawling: {current_url}")
-        logging.info(f"Crawling: {current_url}")
+    yield pages_crawled, max_pages, f"Crawling complete. Pages crawled: {pages_crawled}"
 
-        try:
-            response = requests.get(current_url, headers={'User-Agent': 'Mozilla/5.0'})
-            if response.status_code == 200 and 'text/html' in response.headers.get('Content-Type', ''):
-                soup = BeautifulSoup(response.text, 'lxml')
-                text = extract_relevant_text(response.text)
-                summary_store[current_url] = f"URL: {current_url}\n\n{text}"
-
-                for link in soup.find_all('a', href=True):
-                    new_url = urljoin(current_url, link['href'])
-                    new_url = urlparse(new_url)._replace(fragment='').geturl()
-                    if urlparse(new_url).netloc == urlparse(url).netloc and new_url not in visited and new_url not in to_visit:
-                        to_visit.append(new_url)
-
-                visited.add(current_url)
-                pages_crawled += 1
-
-        except Exception as e:
-            logging.error(f"Error crawling {current_url}: {str(e)}")
-
-    if progress:
-        progress(1.0, f"Crawling complete. Pages crawled: {pages_crawled}")
+def create_vector_index():
+    documents = [Document(text=content) for content in summary_store.values()]
+    index = VectorStoreIndex.from_documents(documents)
     
-    texts = list(summary_store.values())
-    urls = list(summary_store.keys())
-    embeddings = get_embeddings(texts)
+    output_dir = os.getenv("EMBEDDING_DIR", "embeddings")
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    embedding_path = f"{output_dir}/{timestamp}"
+    index.storage_context.persist(persist_dir=embedding_path)
     
-    for text, url, embedding in zip(texts, urls, embeddings):
-        if embedding is not None:
-            collection.add(
-                documents=[text],
-                embeddings=[embedding],
-                metadatas=[{"url": url}],
-                ids=[url.replace("://", "_").replace("/", "_")]
-            )
-        
-        entities_and_relationships = extract_entities_and_relationships(text, url)
-        update_knowledge_graph(entities_and_relationships)
-    
-    fig = create_plotly_graph()
-    
-    return "Crawling and Knowledge Graph generation complete.", "Summarization complete.", fig
+    return index
 
-def query_content(query):
-    if client is None:
-        return "Error: OpenAI client is not initialized. Please set the API key first.", ""
+def generate_graph_visualization(kg_index):
+    """
+    Generate a graph visualization from the KG index.
 
-    query_embedding = get_embeddings([query])[0]
-    if query_embedding is None:
-        return "Error: Failed to process query. Please try again.", ""
+    Args:
+    kg_index (KnowledgeGraphIndex): The Knowledge Graph index to generate the visualization from.
+
+    Returns:
+    str: The path to the generated graph visualization.
+    """
+
+    output_directory = os.getenv("GRAPH_DIR", "graphs")
+
+    # Generate a timestamp for the filename
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    graph_output_file = f"{timestamp}_graph_vis.html"
+    graph_output_path = os.path.join(output_directory, graph_output_file)
+
+    g = kg_index.get_networkx_graph()
+
+    net = Network(
+        notebook=False,
+        cdn_resources="remote",
+        height="800px",
+        width="100%",
+        select_menu=True,
+        filter_menu=False,
+    )
+
+    net.from_nx(g)
+    net.force_atlas_2based(central_gravity=0.015, gravity=-31)
+    net.save_graph(graph_output_path)
+
+    logging.info(f"Graph visualization saved to: {graph_output_path}")
+    return graph_output_path
+
+def create_knowledge_graph():
+    graph_store = SimpleGraphStore()
+    storage_context = StorageContext.from_defaults(graph_store=graph_store)
     
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=5
+    documents = [Document(text=content) for content in summary_store.values()]
+    
+    kg_index = KnowledgeGraphIndex.from_documents(
+        documents=documents,
+        max_triplets_per_chunk=10,
+        storage_context=storage_context,
+        include_embeddings=True,
+        kg_triplet_extract_fn=kg_triplet_extract_fn
     )
     
-    context = "\n\n".join(results['documents'][0])
-    relevant_urls = [metadata['url'] for metadata in results['metadatas'][0]]
+    output_dir = os.getenv("GRAPH_DIR", "graphs")
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    kg_path = f"{output_dir}/{timestamp}"
+    kg_index.storage_context.persist(persist_dir=kg_path)
     
-    try:
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": answer_prompt},
-                {"role": "user", "content": f"Query: {query}\nContext:\n{context}"}
-            ],
-            response_format={"type": "json_object"}
-        )
-        
-        if response.choices[0].finish_reason == "stop":
-            result = json.loads(response.choices[0].message.content)
-            answer = result.get("answer", "No answer provided.")
-            confidence = result.get("confidence", "Unknown")
-            additional_info = result.get("additional_info", "")
-            
-            formatted_answer = f"{answer}\n\nConfidence: {confidence}\n\nAdditional Info: {additional_info}"
-            return formatted_answer, ", ".join(relevant_urls)
-        else:
-            logging.error(f"Unexpected finish reason: {response.choices[0].finish_reason}")
-            return "Error: Unexpected response from the model. Please try again.", ""
-        
-    except json.JSONDecodeError as e:
-        logging.error(f"Error decoding JSON response: {str(e)}")
-    except Exception as e:
-        logging.error(f"Error generating answer: {str(e)}")
+    # Generate and save the graph visualization
+    generate_graph_visualization(kg_index)
     
-    return "Error: An error occurred while generating the answer. Please try again.", ""
+    return kg_index
 
-def set_api_key(api_key):
-    global client
-    try:
-        client = OpenAI(api_key=api_key)
-        client.models.list()
-        logging.info("API key set and tested successfully.")
-        return "API key set and tested successfully."
-    except Exception as e:
-        logging.error(f"Error setting or testing API key: {str(e)}")
-        return f"Failed to set or test API key: {str(e)}"
+def kg_triplet_extract_fn(text):
+    prompt = f"""
+    Extract key information from the following webpage content as a list of triplets in the format (entity1, relation, entity2).
+    Focus on main topics, key facts, and relationships between concepts.
+    Webpage content:
+    {text}
+    """
+    
+    response = client.chat.completions.create(  # Note the correct API method here
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that extracts key information as triplets."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=MAX_OUTPUT_TOKENS
+    )
+    
+    triplets = []
+    response_text = response.choices[0].message.content
+    for line in response_text.split('\n'):
+        line = line.strip()
+        if line.startswith('(') and line.endswith(')'):
+            try:
+                triplet = eval(line)
+                triplets.append(triplet)
+            except Exception as e:
+                logging.error(f"Failed to parse line: {line} - Error: {str(e)}")
+        else:
+            # Attempt to reformat potential triplets
+            try:
+                triplet = tuple(line.strip('()').split(', '))
+                if len(triplet) == 3:
+                    triplets.append(triplet)
+            except Exception as e:
+                logging.error(f"Failed to reformat line: {line} - Error: {str(e)}")
+    
+    return triplets
+
+def get_latest_dir(parent_dir):
+    dirs = [os.path.join(parent_dir, d) for d in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, d))]
+    return max(dirs, key=os.path.getmtime) if dirs else None
+
+def analyze_website():
+    logging.info("Starting analysis process.")
+    vector_index = create_vector_index()
+    kg_index = create_knowledge_graph()
+    logging.info("Analysis complete.")
+    return "Analysis complete."
+
+def query_content(query):
+    # Load the latest vector index
+    vector_dir = os.getenv("EMBEDDING_DIR", "embeddings")
+    latest_vector_dir = get_latest_dir(vector_dir)
+    vector_index = load_index_from_storage(StorageContext.from_defaults(persist_dir=latest_vector_dir))
+
+    # Load the latest knowledge graph
+    kg_dir = os.getenv("GRAPH_DIR", "graphs")
+    latest_kg_dir = get_latest_dir(kg_dir)
+    kg_index = load_index_from_storage(StorageContext.from_defaults(persist_dir=latest_kg_dir))
+
+    # Create query engines for both RAG and Graph-RAG
+    rag_engine = vector_index.as_query_engine()
+    graph_rag_engine = kg_index.as_query_engine(include_text=True)
+
+    # Query both engines
+    rag_response = rag_engine.query(query)
+    graph_rag_response = graph_rag_engine.query(query)
+
+    # Combine responses
+    combined_response = f"RAG Response: {rag_response}\n\nGraph-RAG Response: {graph_rag_response}"
+
+    return combined_response, ", ".join(summary_store.keys())  # Return all URLs as sources for now
+
+if __name__ == "__main__":
+    # You can add any testing or standalone functionality here
+    pass

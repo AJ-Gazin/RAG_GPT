@@ -1,63 +1,70 @@
 import gradio as gr
+from logic import crawl_website, analyze_website, query_content
 from theme import BusinessAnalyzerTheme
-from logic import set_api_key, crawl_website, query_content
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 def create_interface():
-    """Create the Gradio interface for the Business Website Analyzer."""
-    with gr.Blocks(theme=BusinessAnalyzerTheme()) as demo:
-        gr.Markdown("# Business Website Analyzer")
+    css = """
+    h1 {
+        text-align: center;
+        display:block;
+    }
+    """
+    with gr.Blocks(css=css, theme=BusinessAnalyzerTheme()) as demo:
+        gr.Markdown("# Business Website Analyzer", elem_classes="center")
         
         with gr.Row():
-            with gr.Column():
-                # Step 1: API Key Input
-                gr.Markdown("## 1) Enter your OpenAI API key")
-                api_key_input = gr.Textbox(label="OpenAI API Key", type="password", placeholder="Enter OpenAI API Key")
-                api_status = gr.Markdown()
-                api_key_button = gr.Button("Set API Key")
-
-                # Step 2: Website Selection and Crawling
-                gr.Markdown("## 2) Select a Website")
+            with gr.Column(scale=1):
+                gr.Markdown("## 1) Crawl and Analyze Website", elem_classes="center")
                 url_input = gr.Textbox(label="Website URL", placeholder="Enter Website URL")
                 crawl_depth = gr.Radio(
-                    ["Quick (15 pages)", "Robust (30 pages)", "Comprehensive (60 pages)"],
+                    ["Shallow (15 pages)", "Robust (30 pages)", "Comprehensive (60 pages)"],
                     label="Crawl Depth",
                     value="Robust (30 pages)"
                 )
-                crawl_button = gr.Button("Crawl and Analyze")
+                crawl_button = gr.Button("Crawl and Analyze Website", variant="primary")
+                crawl_status = gr.HTML("<center>Ready to Crawl and Analyze!</center>")
+                analysis_status = gr.HTML("<center></center>")
                 
-                # Step 3: Query Input
-                gr.Markdown("## 3) Ask the Website any Question")
+                gr.Markdown("## 2) Ask Questions", elem_classes="center")
                 query_input = gr.Textbox(label="Enter Your Query", placeholder="Type Your Query")
-                query_button = gr.Button("Ask")
+                query_button = gr.Button("Ask", variant="primary")
 
-            with gr.Column():
-                # Results Display
-                crawl_output = gr.Textbox(label="Crawl Status")
-                summarize_output = gr.Textbox(label="Summarization Status")
-                answer_output = gr.Markdown(label="Answer")
+            with gr.Column(scale=1):
+                gr.Markdown("## Query Results", elem_classes="center")
+                answer_output = gr.Markdown()
                 urls_output = gr.Textbox(label="Sources")
 
-        # Knowledge Graph Display
-        graph_output = gr.Plot(label="Knowledge Graph")
-        
-        # Event handlers
-        api_key_button.click(
-            fn=set_api_key,
-            inputs=api_key_input,
-            outputs=api_status
-        )
-        
+        def crawl_wrapper(url, depth, progress=gr.Progress()):
+            max_pages = {"Shallow (15 pages)": 15, "Robust (30 pages)": 30, "Comprehensive (60 pages)": 60}[depth]
+            for pages_crawled, total_pages, status in crawl_website(url, max_pages):
+                progress(pages_crawled / total_pages, status)
+            return f"<center>Crawling complete. Pages crawled: {pages_crawled}</center>"
+
+        def start_analysis():
+            return "<center>Analysis in progress...</center>"
+
+        def analyze_wrapper():
+            # Call the analyze_website function from logic.py
+            analysis_message = analyze_website()
+            return f"<center>{analysis_message}</center>"
+
         crawl_button.click(
-            fn=lambda url, depth: crawl_website(url, {"Quick (15 pages)": 15, "Robust (30 pages)": 30, "Comprehensive (60 pages)": 60}[depth]), 
-            inputs=[url_input, crawl_depth], 
-            outputs=[crawl_output, summarize_output, graph_output]
+            fn=crawl_wrapper,
+            inputs=[url_input, crawl_depth],
+            outputs=crawl_status
+        ).success(
+            fn=start_analysis,
+            outputs=analysis_status
+        ).then(
+            fn=analyze_wrapper,
+            outputs=analysis_status
         )
         
-        query_button.click(
-            fn=query_content,
-            inputs=query_input,
-            outputs=[answer_output, urls_output]
-        )
+        query_button.click(fn=query_content, inputs=query_input, outputs=[answer_output, urls_output])
 
     return demo
 
