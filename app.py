@@ -33,6 +33,9 @@ def create_interface():
                 query_input = gr.Textbox(label="Enter Your Query", placeholder="Type Your Query")
                 query_button = gr.Button("Ask", variant="primary")
 
+                gr.Markdown("## Knowledge Graph Visualization", elem_classes="center")
+                graph_html = gr.HTML(visible=False)
+
             with gr.Column(scale=1):
                 gr.Markdown("## Query Results", elem_classes="center")
                 answer_output = gr.Markdown()
@@ -48,9 +51,8 @@ def create_interface():
             return "<center>Analysis in progress...</center>"
 
         def analyze_wrapper():
-            # Call the analyze_website function from logic.py
-            analysis_message = analyze_website()
-            return f"<center>{analysis_message}</center>"
+            analysis_message, graph_html_content = analyze_website()
+            return f"<center>{analysis_message}</center>", graph_html_content, gr.update(visible=True)
 
         crawl_button.click(
             fn=crawl_wrapper,
@@ -61,7 +63,7 @@ def create_interface():
             outputs=analysis_status
         ).then(
             fn=analyze_wrapper,
-            outputs=analysis_status
+            outputs=[analysis_status, graph_html, graph_html]
         )
         
         query_button.click(fn=query_content, inputs=query_input, outputs=[answer_output, urls_output])

@@ -23,6 +23,7 @@ import networkx as nx
 from pyvis.network import Network
 
 from dotenv import load_dotenv
+from prompts import answer_prompt
 
 # Load environment variables
 load_dotenv()
@@ -116,41 +117,32 @@ def create_vector_index():
     
     return index
 
+
+
 def generate_graph_visualization(kg_index):
-    """
-    Generate a graph visualization from the KG index.
-
-    Args:
-    kg_index (KnowledgeGraphIndex): The Knowledge Graph index to generate the visualization from.
-
-    Returns:
-    str: The path to the generated graph visualization.
-    """
-
-    output_directory = os.getenv("GRAPH_DIR", "graphs")
-
-    # Generate a timestamp for the filename
-    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-    graph_output_file = f"{timestamp}_graph_vis.html"
-    graph_output_path = os.path.join(output_directory, graph_output_file)
-
     g = kg_index.get_networkx_graph()
 
     net = Network(
-        notebook=False,
-        cdn_resources="remote",
-        height="800px",
+        height="600px",
         width="100%",
-        select_menu=True,
-        filter_menu=False,
+        bgcolor="#222222",
+        font_color="white"
     )
 
     net.from_nx(g)
-    net.force_atlas_2based(central_gravity=0.015, gravity=-31)
-    net.save_graph(graph_output_path)
+    net.force_atlas_2based(gravity=-50, central_gravity=0.01, spring_length=100, spring_strength=0.08, damping=0.4, overlap=0)
+    
+    html = net.generate_html()
+    html = html.replace("'", "\"")
+    
+    iframe_html = f"""<iframe style="width: 100%; height: 600px;margin:0 auto" name="result" allow="midi; geolocation; microphone; camera;
+     display-capture; encrypted-media;" sandbox="allow-modals allow-forms
+     allow-scripts allow-same-origin allow-popups
+     allow-top-navigation-by-user-activation allow-downloads" allowfullscreen=""
+     allowpaymentrequest="" frameborder="0" srcdoc='{html}'></iframe>"""
 
-    logging.info(f"Graph visualization saved to: {graph_output_path}")
-    return graph_output_path
+    logging.info("Graph visualization HTML generated.")
+    return iframe_html
 
 def create_knowledge_graph():
     graph_store = SimpleGraphStore()
@@ -218,12 +210,15 @@ def get_latest_dir(parent_dir):
     dirs = [os.path.join(parent_dir, d) for d in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, d))]
     return max(dirs, key=os.path.getmtime) if dirs else None
 
+
 def analyze_website():
     logging.info("Starting analysis process.")
     vector_index = create_vector_index()
     kg_index = create_knowledge_graph()
+    graph_html = generate_graph_visualization(kg_index)
     logging.info("Analysis complete.")
-    return "Analysis complete."
+    return "Analysis complete.", graph_html
+
 
 def query_content(query):
     # Load the latest vector index
@@ -244,10 +239,25 @@ def query_content(query):
     rag_response = rag_engine.query(query)
     graph_rag_response = graph_rag_engine.query(query)
 
-    # Combine responses
-    combined_response = f"RAG Response: {rag_response}\n\nGraph-RAG Response: {graph_rag_response}"
+    # Combine responses and prepare context
+    combined_context = f"RAG Response: {rag_response}\n\nGraph-RAG Response: {graph_rag_response}"
 
-    return combined_response, ", ".join(summary_store.keys())  # Return all URLs as sources for now
+    # Use the answer_prompt to generate a comprehensive response
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant that analyzes business information."},
+            {"role": "user", "content": answer_prompt.format(query=query, context=combined_context)}
+        ],
+        max_tokens=MAX_OUTPUT_TOKENS
+    )
+
+    answer = response.choices[0].message.content
+
+    # Extract URLs from the summary_store for citation
+    urls = list(summary_store.keys())
+
+    return answer, ", ".join(urls)
 
 if __name__ == "__main__":
     # You can add any testing or standalone functionality here
