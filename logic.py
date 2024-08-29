@@ -36,7 +36,7 @@ MAX_TOKENS = 128000
 MAX_OUTPUT_TOKENS = 16000
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 tokenizer = tiktoken.get_encoding("cl100k_base")
-summary_store = {}
+content_store = {}
 
 # Configure global settings
 Settings.llm = LlamaOpenAI(model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY"))
@@ -70,7 +70,7 @@ def crawl_page(current_url, visited, to_visit, max_tokens, total_tokens):
             if total_tokens + text_tokens > max_tokens:
                 logging.warning("Token limit reached, stopping crawl.")
                 return None, total_tokens
-            summary_store[current_url] = text
+            content_store[current_url] = text
             total_tokens += text_tokens
             soup = BeautifulSoup(response.text, 'html.parser')
             new_links = [
@@ -86,8 +86,8 @@ def crawl_page(current_url, visited, to_visit, max_tokens, total_tokens):
     return [], total_tokens
 
 def crawl_website(url, max_pages):
-    global summary_store
-    summary_store.clear()
+    global content_store
+    content_store.clear()
     
     logging.info(f"Starting crawl for: {url}")
     visited, to_visit = set(), [url]
@@ -107,7 +107,7 @@ def crawl_website(url, max_pages):
     yield pages_crawled, max_pages, f"Crawling complete. Pages crawled: {pages_crawled}"
 
 def create_vector_index():
-    documents = [Document(text=content) for content in summary_store.values()]
+    documents = [Document(text=content) for content in content_store.values()]
     index = VectorStoreIndex.from_documents(documents)
     
     output_dir = os.getenv("EMBEDDING_DIR", "embeddings")
@@ -148,7 +148,7 @@ def create_knowledge_graph():
     graph_store = SimpleGraphStore()
     storage_context = StorageContext.from_defaults(graph_store=graph_store)
     
-    documents = [Document(text=content) for content in summary_store.values()]
+    documents = [Document(text=content) for content in content_store.values()]
     
     kg_index = KnowledgeGraphIndex.from_documents(
         documents=documents,
@@ -254,8 +254,8 @@ def query_content(query):
 
     answer = response.choices[0].message.content
 
-    # Extract URLs from the summary_store for citation
-    urls = list(summary_store.keys())
+    # Extract URLs from the content_store for citation
+    urls = list(content_store.keys())
 
     return answer, ", ".join(urls)
 
