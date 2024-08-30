@@ -3,10 +3,14 @@ from logic import crawl_website, analyze_website, query_content
 from theme import BusinessAnalyzerTheme
 import os
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %Y-%m-%d %H:%M:%S')
+
 def create_interface():
+    logging.info("Creating Gradio interface")
     css = """
     h1 {
         text-align: center;
@@ -21,7 +25,7 @@ def create_interface():
                 gr.Markdown("## 1) Crawl and Analyze Website", elem_classes="center")
                 url_input = gr.Textbox(label="Website URL", placeholder="Enter Website URL")
                 crawl_depth = gr.Radio(
-                    ["Shallow (15 pages)", "Robust (30 pages)", "Comprehensive (60 pages)"],
+                    ["Shallow (5 pages)", "Robust (30 pages)", "Comprehensive (60 pages)"],
                     label="Crawl Depth",
                     value="Robust (30 pages)"
                 )
@@ -42,15 +46,18 @@ def create_interface():
                 urls_output = gr.Textbox(label="Sources")
 
         def crawl_wrapper(url, depth, progress=gr.Progress()):
-            max_pages = {"Shallow (15 pages)": 15, "Robust (30 pages)": 30, "Comprehensive (60 pages)": 60}[depth]
+            logging.info(f"Starting crawl for URL: {url} with depth: {depth}")
+            max_pages = {"Shallow (5 pages)": 5, "Robust (30 pages)": 30, "Comprehensive (60 pages)": 60}[depth]
             for pages_crawled, total_pages, status in crawl_website(url, max_pages):
                 progress(pages_crawled / total_pages, status)
             return f"<center>Crawling complete. Pages crawled: {pages_crawled}</center>"
 
         def start_analysis():
+            logging.info("Starting analysis")
             return "<center>Analysis in progress...</center>"
 
         def analyze_wrapper():
+            logging.info("Running analysis")
             analysis_message, graph_html_content = analyze_website()
             return f"<center>{analysis_message}</center>", graph_html_content, gr.update(visible=True)
 

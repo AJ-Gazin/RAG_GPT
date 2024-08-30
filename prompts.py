@@ -30,18 +30,32 @@ Context:
 Answer:
 """
 
-triplet_extraction_prompt = """
-You are an AI assistant specializing in extracting key information from text as triplets. Your task is to identify and extract the main entities and their relationships from the following webpage content.
+KG_TRIPLET_EXTRACT_TMPL = """
+-Goal-
+Given a text document parsed from the html of a business's website, identify all entities and their entity types from the text and all relationships among the identified entities. Particularly, focus on information a user may want to ask about a business, such as employees, services, ideals, etc.
+Given the text, extract up to {max_knowledge_triplets} entity-relation triplets.
 
-Guidelines:
-1. Focus on important topics, key facts, and relationships between business-related concepts.
-2. Extract triplets in the format (Entity1, Relation, Entity2).
-3. Make sure the triplets reflect meaningful connections that help understand the business context.
-4. Provide at least 5 triplets, but no more than 15.
+-Steps-
+1. Identify all entities. For each identified entity, extract the following information:
+- entity_name: Name of the entity, capitalized
+- entity_type: Type of the entity
+- entity_description: Comprehensive description of the entity's attributes and activities
+Format each entity as ("entity"$$$$<entity_name>$$$$<entity_type>$$$$<entity_description>)
 
-Provide the triplets directly, one per line, in the following format:
-(Entity1, Relation, Entity2)
+2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
+For each pair of related entities, extract the following information:
+- source_entity: name of the source entity, as identified in step 1
+- target_entity: name of the target entity, as identified in step 1
+- relation: relationship between source_entity and target_entity
+- relationship_description: explanation as to why you think the source entity and the target entity are related to each other
 
-Webpage content:
-{text}
+Format each relationship as ("relationship"$$$$<source_entity>$$$$<target_entity>$$$$<relation>$$$$<relationship_description>)
+
+3. When finished, output.
+
+-Real Data-
+######################
+text: {text}
+######################
+output:
 """
