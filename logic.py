@@ -4,15 +4,13 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 import re
-#from openai import OpenAI
 import tiktoken
 from datetime import datetime
 import logging
 import networkx as nx
-from graspologic.partition import hierarchical_leiden
-from collections import defaultdict
 from pyvis.network import Network
 from typing import List, Callable, Any, Optional, Union
+from collections import defaultdict
 
 from llama_index.core import (
     PropertyGraphIndex,
@@ -41,6 +39,8 @@ from llama_index.core.llms import ChatMessage
 from dotenv import load_dotenv
 from prompts import answer_prompt, KG_TRIPLET_EXTRACT_TMPL
 
+from graspologic.partition import hierarchical_leiden
+
 # Load environment variables
 load_dotenv()
 
@@ -50,7 +50,6 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Global variables
 MAX_TOKENS = 128000
 MAX_OUTPUT_TOKENS = 16000
-#client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 tokenizer = tiktoken.get_encoding("cl100k_base")
 content_store = {}
 
@@ -158,7 +157,7 @@ class GraphRAGExtractor(TransformComponent):
         llm: Optional[LLM] = None,
         extract_prompt: Optional[Union[str, PromptTemplate]] = None,
         parse_fn: Callable = parse_fn,
-        max_paths_per_chunk: int = 10,
+        max_paths_per_chunk: int = 1,
         num_workers: int = 4,
     ) -> None:
         if isinstance(extract_prompt, str):
@@ -264,47 +263,69 @@ class GraphRAGStore(Neo4jPropertyGraphStore):
 
     def build_communities(self):
         nx_graph = self._create_nx_graph()
-        community_hierarchical_clusters = hierarchical_leiden(
-            nx_graph, max_cluster_size=self.max_cluster_size
-        )
-        self.entity_info, community_info = self._collect_community_info(
-            nx_graph, community_hierarchical_clusters
-        )
-        self._summarize_communities(community_info)
+        if len(nx_graph) == 0:
+            logging.warning("Graph is empty. No communities to build.")
+            return
+
+        try:
+            logging.info(f"Starting community detection with {len(nx_graph)} nodes")
+            community_hierarchical_clusters = hierarchical_leiden(
+                nx_graph, max_cluster_size=self.max_cluster_size
+            )
+            logging.info(f"Community detection completed. Number of clusters: {len(community_hierarchical_clusters)}")
+            self.entity_info, community_info = self._collect_community_info(
+                nx_graph, community_hierarchical_clusters
+            )
+            self._summarize_communities(community_info)
+        except Exception as e:
+            logging.error(f"Error in build_communities: {str(e)}")
+            raise
 
     def _create_nx_graph(self):
         nx_graph = nx.Graph()
         triplets = self.get_triplets()
         for entity1, relation, entity2 in triplets:
-            nx_graph.add_node(entity1.name)
-            nx_graph.add_node(entity2.name)
+            # Ensure node names are strings and don't include 'True' or numeric values
+            node1 = str(entity1.name).replace('True', 'true').replace('False', 'false')
+            node2 = str(entity2.name).replace('True', 'true').replace('False', 'false')
+            if node1.isdigit():
+                node1 = f"node_{node1}"
+            if node2.isdigit():
+                node2 = f"node_{node2}"
+            
+            nx_graph.add_node(node1, type=entity1.label)
+            nx_graph.add_node(node2, type=entity2.label)
             description = relation.properties.get("relationship_description", "")
             nx_graph.add_edge(
-                relation.source_id,
-                relation.target_id,
+                node1,
+                node2,
                 relationship=relation.label,
                 description=description,
             )
+        logging.info(f"Created graph with {nx_graph.number_of_nodes()} nodes and {nx_graph.number_of_edges()} edges")
         return nx_graph
 
     def _collect_community_info(self, nx_graph, clusters):
         entity_info = defaultdict(set)
         community_info = defaultdict(list)
 
-        for item in clusters:
-            node = item.node
-            cluster_id = item.cluster
+        logging.info(f"Collecting community info for {len(clusters)} clusters")
 
-            entity_info[node].add(cluster_id)
-
-            for neighbor in nx_graph.neighbors(node):
-                edge_data = nx_graph.get_edge_data(node, neighbor)
-                if edge_data:
-                    detail = f"{node} -> {neighbor} -> {edge_data['relationship']} -> {edge_data['description']}"
-                    community_info[cluster_id].append(detail)
+        for cluster in clusters:
+            node = cluster.node
+            cluster_id = cluster.cluster
+            if node in nx_graph:
+                entity_info[node].add(cluster_id)
+                for neighbor in nx_graph.neighbors(node):
+                    edge_data = nx_graph.get_edge_data(node, neighbor)
+                    if edge_data:
+                        detail = f"{node} -> {neighbor} -> {edge_data['relationship']} -> {edge_data['description']}"
+                        community_info[cluster_id].append(detail)
+            else:
+                logging.warning(f"Node '{node}' from cluster {cluster_id} not found in graph.")
 
         entity_info = {k: list(v) for k, v in entity_info.items()}
-
+        logging.info(f"Collected info for {len(entity_info)} entities across {len(community_info)} communities")
         return dict(entity_info), dict(community_info)
 
     def _summarize_communities(self, community_info):
@@ -351,6 +372,7 @@ class GraphRAGQueryEngine(CustomQueryEngine):
                 entities.add(obj)
 
         return list(entities)
+
     def retrieve_entity_communities(self, entity_info, entities):
         logging.info(f"Retrieving communities for entities: {entities}")
         community_ids = []
@@ -367,20 +389,20 @@ class GraphRAGQueryEngine(CustomQueryEngine):
 
     def aggregate_answers(self, community_answers):
         logging.info("Aggregating answers from communities")
-        prompt = "Combine the following intermediate answers into a final, concise response."
+        prompt = "Combine the following intermediate answers into a final, concise response:\n\n" + "\n\n".join(community_answers)
         response = self.llm.complete(prompt)
         return response.text.strip()
 
 def analyze_website():
     logging.info("Starting website analysis")
     
-    splitter = SentenceSplitter(chunk_size=2048, chunk_overlap=20)
+    splitter = SentenceSplitter(chunk_size=4096, chunk_overlap=16)
     nodes = splitter.get_nodes_from_documents([Document(text=content) for content in content_store.values()])
     
     kg_extractor = GraphRAGExtractor(
         llm=Settings.llm,
         extract_prompt=KG_TRIPLET_EXTRACT_TMPL,
-        max_paths_per_chunk=2,
+        max_paths_per_chunk=1,
         parse_fn=parse_fn
     )
     
@@ -474,6 +496,48 @@ def get_latest_dir(parent_dir):
         return None
     dirs = [os.path.join(parent_dir, d) for d in os.listdir(parent_dir) if os.path.isdir(os.path.join(parent_dir, d))]
     return max(dirs, key=os.path.getmtime) if dirs else None
+
+# NeuronsLab example functionality
+def load_example_graph():
+    logging.info("Loading NeuronsLab example graph")
+    example_dir = "neuronslab_example_embeddings"
+    graph_store = GraphRAGStore(
+        username=os.getenv("NEO4J_USERNAME"),
+        password=os.getenv("NEO4J_PASSWORD"),
+        url=os.getenv("NEO4J_URI")
+    )
+    
+    global property_graph_index
+    property_graph_index = load_index_from_storage(StorageContext.from_defaults(persist_dir=example_dir))
+    
+    graph_store.build_communities()
+    
+    logging.info("NeuronsLab example graph loaded successfully")
+    return graph_store
+
+def query_example_graph(query):
+    logging.info(f"Processing query for NeuronsLab example: {query}")
+    graph_store = GraphRAGStore(
+        username=os.getenv("NEO4J_USERNAME"),
+        password=os.getenv("NEO4J_PASSWORD"),
+        url=os.getenv("NEO4J_URI")
+    )
+    
+    query_engine = GraphRAGQueryEngine(
+        graph_store=graph_store,
+        index=property_graph_index,
+        llm=Settings.llm,
+        similarity_top_k=10,
+    )
+
+    try:
+        response = query_engine.custom_query(query)
+    except Exception as e:
+        logging.error(f"Error during query processing for NeuronsLab example: {str(e)}")
+        return f"Error occurred while processing the query: {str(e)}", ""
+
+    # For the example, we don't have actual URLs, so we'll return a placeholder
+    return response, "NeuronsLab.com (example website)"
 
 if __name__ == "__main__":
     # You can add any testing or standalone functionality here
