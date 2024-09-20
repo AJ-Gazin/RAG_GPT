@@ -1,117 +1,210 @@
-import gradio as gr
-from logic import crawl_website, analyze_website, query_content, load_example_graph, query_example_graph, generate_graph_visualization
+# implement: https://llm-graph-builder.neo4jlabs.com/
 import os
-from dotenv import load_dotenv
+import gradio as gr
 import logging
+from dotenv import load_dotenv
+from llama_index.core import SimpleDirectoryReader, Document
+from llama_index.core import PropertyGraphIndex
+from llama_index.graph_stores.neo4j import Neo4jPropertyGraphStore
+from llama_index.llms.openai import OpenAI as OpenAILLM
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core.indices.property_graph import SimpleLLMPathExtractor
+from theme import BusinessAnalyzerTheme  # Custom theme
+
+
+# Load environment variables from .env file
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %Y-%m-%d %H:%M:%S')
 
-# Global variable to store the current graph visualization
-current_graph_html = ""
+# Retrieve the OpenAI API token and Neo4j credentials from the environment variables
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+NEO4J_USERNAME = os.getenv("NEO4J_USERNAME")
+
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
+
+NEO4J_URL = os.getenv("NEO4J_URI")
+
+
+if not OPENAI_API_KEY or not NEO4J_USERNAME or not NEO4J_PASSWORD or not NEO4J_URL:
+    raise ValueError(
+        "Required environment variables (OpenAI API token, Neo4j credentials) are missing."
+    )
+
+
+# Set up logging
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
+
+# Neo4j Setup
+
+graph_store = Neo4jPropertyGraphStore(
+    username=NEO4J_USERNAME,
+    password=NEO4J_PASSWORD,
+    url=NEO4J_URL,
+)
+
+
+# Initialize OpenAI LLM via LlamaIndex
+
+llm = OpenAILLM(api_key=OPENAI_API_KEY, model="gpt-4o-mini", temperature=0.0)
+
+embedding_model = OpenAIEmbedding(model_name="text-embedding-3-small")
+
+
+# Global variable to store the loaded index
+
+loaded_index = None
+
+
+def load_and_process_html():
+    """Load HTML files from NeuronsLab.com folder and process them into a knowledge graph."""
+
+    global loaded_index
+
+    logging.info("Loading and processing HTML files from NeuronsLab.com folder.")
+
+    kg_extractor = SimpleLLMPathExtractor(
+        llm=llm,
+        max_paths_per_chunk=10,
+        num_workers=4,
+    )
+
+    try:
+        # Assuming the HTML files are in a folder named 'NeuronsLab.com'
+
+        documents = SimpleDirectoryReader("./NeuronsLabParsed/").load_data()
+
+        # Create the PropertyGraphIndex
+
+        # loaded_index = PropertyGraphIndex.from_documents(
+        #     documents,
+        #     embed_model=embedding_model,
+        #     kg_extractors=[kg_extractor],
+        #     property_graph_store=graph_store,
+        #     show_progress=True,
+        # )
+
+        loaded_index = PropertyGraphIndex.from_existing(
+            llm=llm,
+            embed_model=embedding_model,
+            property_graph_store=graph_store,
+            show_progress=True,
+        )
+
+        return "Successfully loaded and processed HTML files into a knowledge graph."
+
+    except Exception as e:
+        logging.error(f"Error loading and processing HTML files: {str(e)}")
+
+        return f"Error loading and processing HTML files: {str(e)}"
+
+
+def query_content(query):
+    """Process a query and return results from the Neo4j-backed property graph."""
+
+    logging.info("Query processing started.")
+
+    global loaded_index
+
+    if loaded_index is None:
+        logging.error("Error: Property graph index not loaded.")
+
+        return (
+            "Error: Property graph index not loaded. Please load the graph first.",
+            "",
+        )
+
+    try:
+        # Retrieve nodes from the property graph
+
+        retriever = loaded_index.as_retriever(include_text=False)
+
+        nodes = retriever.retrieve(query)
+
+        node_texts = [node.text for node in nodes]
+
+        if not node_texts:
+            return "No nodes found for the query.", ""
+
+        logging.info(f"Nodes retrieved: {node_texts}")
+
+        # Generate a summary using the query engine
+
+        query_engine = loaded_index.as_query_engine(include_text=True)
+
+        response = query_engine.query(query)
+
+        logging.info("Answer generated successfully.")
+
+        return str(response), "\n".join(node_texts)
+
+    except Exception as e:
+        logging.error(f"Error generating answer: {str(e)}")
+
+        return f"Error: {str(e)}", ""
+
 
 def create_interface():
-    logging.info("Creating Gradio interface")
-    
-    def crawl_wrapper(url, depth):
-        global current_graph_html
-        logging.info(f"Starting crawl for URL: {url} with depth: {depth}")
-        max_pages = {"Shallow (5 pages)": 5, "Robust (30 pages)": 30, "Comprehensive (60 pages)": 60}[depth]
-        for pages_crawled, total_pages, status in crawl_website(url, max_pages):
-            yield f"<center>{status}</center>"
-        yield f"<center>Crawling complete. Pages crawled: {pages_crawled}</center>"
+    """Create the Gradio interface."""
 
-    def start_analysis():
-        logging.info("Starting analysis")
-        return "<center>Analysis in progress...</center>"
+    with gr.Blocks(
+        css=".center { text-align: center; width: 100%; } .radio-button { flex: 1; text-align: center; }",
+        theme=BusinessAnalyzerTheme(),
+    ) as demo:
+        gr.Markdown("# NeuronsLab.com Knowledge Graph Analyzer", elem_classes="center")
 
-    def analyze_wrapper():
-        global current_graph_html
-        logging.info("Running analysis")
-        analysis_message, graph_html_content = analyze_website()
-        current_graph_html = graph_html_content
-        return f"<center>{analysis_message}</center>", graph_html_content, gr(visible=True)
-
-    def load_example_wrapper():
-        global current_graph_html
-        logging.info("Loading NeuronsLab example")
-        graph_store = load_example_graph()
-        current_graph_html = generate_graph_visualization(graph_store)
-        return "<center>NeuronsLab example loaded successfully</center>", current_graph_html, gr(visible=True)
-
-    def query_wrapper(query, website_choice):
-        logging.info(f"Processing query: {query}")
-        if website_choice == "Custom Website":
-            response, urls = query_content(query)
-        else:
-            response, urls = query_example_graph(query)
-        return response, urls
-
-    with gr.Blocks() as demo:
-        gr.Markdown("# Business Website Analyzer", elem_id="title")
-        
         with gr.Row():
             with gr.Column(scale=1):
-                website_choice = gr.Radio(["Custom Website", "NeuronsLab Example"], label="Website Choice", value="Custom Website")
-                
-                with gr.Group() as custom_website_group:
-                    url_input = gr.Textbox(label="Website URL", placeholder="Enter Website URL")
-                    crawl_depth = gr.Radio(
-                        ["Shallow (5 pages)", "Robust (30 pages)", "Comprehensive (60 pages)"],
-                        label="Crawl Depth",
-                        value="Robust (30 pages)"
-                    )
-                    crawl_button = gr.Button("Crawl and Analyze Website")
-                
-                with gr.Group(visible=False) as example_website_group:
-                    load_example_button = gr.Button("Load NeuronsLab Example")
-                
-                crawl_status = gr.HTML("<center>Ready to Crawl and Analyze!</center>")
-                analysis_status = gr.HTML()
-                
-                query_input = gr.Textbox(label="Enter Your Query", placeholder="Type Your Query")
-                query_button = gr.Button("Ask")
+                gr.Markdown("## Load and Process HTML Files", elem_classes="center")
 
-                graph_html = gr.HTML(visible=False, label="Knowledge Graph Visualization")
+                load_button = gr.Button(
+                    "Load and Process HTML Files", variant="primary"
+                )
+
+                gr.Markdown("## Content Query", elem_classes="center")
+
+                query_input = gr.Textbox(
+                    label="Enter Your Query",
+                    show_label=False,
+                    placeholder="Type Your Query",
+                    elem_classes="center",
+                )
+
+                query_button = gr.Button("Ask", variant="primary")
 
             with gr.Column(scale=1):
-                answer_output = gr.Markdown(label="Query Results")
-                urls_output = gr.Textbox(label="Sources")
+                gr.Markdown("## Load Results", elem_classes="center")
 
-        def toggle_website_choice(choice):
-            if choice == "Custom Website":
-                return gr.Group(visible=True), gr.Group(visible=False)
-            else:
-                return gr.Group(visible=False), gr.Group(visible=True)
+                load_output = gr.Textbox(
+                    label="Load Status", show_label=False, placeholder="Load Status"
+                )
 
-        website_choice.change(toggle_website_choice, inputs=[website_choice], outputs=[custom_website_group, example_website_group])
+                gr.Markdown("## Query Results", elem_classes="center")
 
-        crawl_button.click(
-            fn=crawl_wrapper,
-            inputs=[url_input, crawl_depth],
-            outputs=crawl_status
-        ).then(
-            fn=start_analysis,
-            outputs=analysis_status
-        ).then(
-            fn=analyze_wrapper,
-            outputs=[analysis_status, graph_html, graph_html]
-        )
-        
-        load_example_button.click(
-            fn=load_example_wrapper,
-            outputs=[analysis_status, graph_html, graph_html]
-        )
-        
+                answer_output = gr.Markdown()
+
+                urls_output = gr.Textbox(
+                    label="Sources", show_label=False, placeholder="Sources"
+                )
+
+        # Event handlers
+
+        load_button.click(fn=load_and_process_html, outputs=[load_output])
+
         query_button.click(
-            fn=query_wrapper,
-            inputs=[query_input, website_choice],
-            outputs=[answer_output, urls_output]
+            fn=query_content, inputs=query_input, outputs=[answer_output, urls_output]
         )
 
     return demo
 
+
 if __name__ == "__main__":
     demo = create_interface()
-    demo.launch(allowed_paths=["."])  # Allow serving files from the current directory
+
+    demo.launch(share=True)
